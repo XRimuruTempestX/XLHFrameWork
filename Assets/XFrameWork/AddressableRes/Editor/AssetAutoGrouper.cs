@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
@@ -14,6 +15,16 @@ namespace XFrameWork.AddressableRes.Editor
         [FolderPath]
         public string findPath;
 
+        [LabelText("设置标签")]
+        public string lable = "Game";
+        
+        private AddressableAssetSettings settings;
+
+
+        private void Awake()
+        {
+            settings =  AddressableAssetSettingsDefaultObject.GetSettings(true);
+        }
 
         [MenuItem("Tools/查找资源")]
         public static AssetAutoGrouper ShowWindow()
@@ -31,16 +42,22 @@ namespace XFrameWork.AddressableRes.Editor
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 string dirName = Path.GetDirectoryName(path);
-                if (AssetDatabase.IsValidFolder(path))
+                if (AssetDatabase.IsValidFolder(path) || path.EndsWith(".cs"))
                     continue;
                 var group = CreateGroups(Path.GetFileName(dirName));
                 //Debug.Log(Path.GetFileName(dirName));
+                AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
+                entry.SetAddress(Path.GetFileNameWithoutExtension(path));
+                entry.SetLabel(lable,true);
             }
+            
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssets();
         }
 
         private AddressableAssetGroup CreateGroups(string groupName)
         {
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
+            
             var group = settings.FindGroup(groupName);
             if(group != null)
                 return group;
@@ -54,5 +71,7 @@ namespace XFrameWork.AddressableRes.Editor
             }
             return group;
         }
+        
+        
     }
 }

@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using XFrameWork.AddressableRes.Runtime;
@@ -14,6 +16,9 @@ public class TestScripts : MonoBehaviour
         GameObject obj =  await AssetReference.LoadAssetAsync<GameObject>().Task;
         Instantiate(obj);
     }
+
+
+
 
     // Update is called once per frame
     void Update()

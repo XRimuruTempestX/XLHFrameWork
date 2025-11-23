@@ -20,6 +20,8 @@ namespace XFrameWork.AddressableRes.Runtime
                 return instance;
             }
         }
+        
+        
 
         /// <summary>
         /// 初始化addressable
@@ -108,6 +110,11 @@ namespace XFrameWork.AddressableRes.Runtime
             }
             
             Debug.Log("当前缓存路径: " + UnityEngine.Caching.currentCacheForWriting.path);
+            
+        }
+
+        public async UniTask LoadAssets(string lableKey)
+        {
             
         }
     }

@@ -32,7 +32,7 @@ namespace XFrameWork.AddressableRes.Runtime
         
         private Dictionary<string, AsyncOperationHandle> _sceneCache = new Dictionary<string, AsyncOperationHandle>();
 
-        private async UniTask InitResource()
+        public async UniTask InitResource()
         {
             _db = await Addressables.LoadAssetAsync<ResourceDatabase>("ResourceDatabase");
         }

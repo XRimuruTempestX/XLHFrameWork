@@ -2,27 +2,29 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.UI;
 using XFrameWork.AddressableRes.Runtime;
 
 public class TestScripts : MonoBehaviour
 {
-
-    public AssetReference AssetReference;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    public Image image;
     async void Start()
     {
         await AddressableLoad.Instance.InitAddressable();
         await AddressableLoad.Instance.UpdateAssets("Game");
-        GameObject obj =  await AssetReference.LoadAssetAsync<GameObject>().Task;
+        await ResourceSystem.Instance.InitResource();
+
+        GameObject obj = await ResourceSystem.Instance.LoadAssetAsync<GameObject>(Test2.Cube__1_);
         Instantiate(obj);
+
+        image.sprite = await ResourceSystem.Instance.LoadAssetAsync<Sprite>(TestArt.icon_bg3);
     }
-
-
 
 
     // Update is called once per frame
     void Update()
     {
-        
     }
 }

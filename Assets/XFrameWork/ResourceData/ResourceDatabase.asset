@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1f80018f7715d24893370fd516da1b4, type: 3}
+  m_Name: ResourceDatabase
+  m_EditorClassIdentifier: 
+  entries:
+  - key: Test2_Cube (1)
+    reference:
+      m_AssetGUID: 01328fe880946964789dbc2cef073006
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - key: Testc_Sphere (1)
+    reference:
+      m_AssetGUID: c11c2d9e55a70d846903c920fe86d833
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - key: Testc_Sphere
+    reference:
+      m_AssetGUID: ff5d2b12238d7d948877b8b3c20421e7
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - key: TestArt_Cube
+    reference:
+      m_AssetGUID: 5bc80043fa05c7447a6f90d905a7189e
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - key: TestArt_icon_bg3
+    reference:
+      m_AssetGUID: ce55331af6b22ed43964c1aa966ac4c0
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - key: TestArt_Image
+    reference:
+      m_AssetGUID: 05eaf62f0e68d2d498b49b3cfe587229
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0

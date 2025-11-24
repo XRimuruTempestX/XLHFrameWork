@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -15,6 +16,7 @@ namespace XFrameWork.AddressableRes.Config
             public AssetReference reference;
         }
 
+        [Searchable]
         public List<Entry> entries = new List<Entry>();
         
         private Dictionary<string, AssetReference> _map;

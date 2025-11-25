@@ -85,7 +85,16 @@ namespace XFrameWork.AddressableRes.Editor
                     string dirName = Path.GetDirectoryName(path);
                     if (AssetDatabase.IsValidFolder(path) || path.EndsWith(".cs"))
                         continue;
-                    string key = Path.GetFileName(dirName) + "_" + Path.GetFileNameWithoutExtension(path);
+                    string key = "";
+                    if (Path.GetFileNameWithoutExtension(path).Contains("Window"))
+                    {
+                        key = Path.GetFileNameWithoutExtension(path);
+                    }
+                    else
+                    {
+                        key = Path.GetFileName(dirName) + "_" + Path.GetFileNameWithoutExtension(path);
+                    }
+
                     assetDic.TryAdd(key, guid);
 
                     if (!scriptDic.ContainsKey(Path.GetFileName(dirName) ?? string.Empty))

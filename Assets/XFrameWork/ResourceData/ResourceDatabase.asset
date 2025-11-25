@@ -55,3 +55,10 @@ MonoBehaviour:
       m_SubObjectType: 
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
+  - key: TestWindow
+    reference:
+      m_AssetGUID: f35d0f4058d470f4288f66028eee3bff
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0

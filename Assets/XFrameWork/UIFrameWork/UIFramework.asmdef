@@ -1,0 +1,19 @@
+{
+    "name": "UIFramework",
+    "rootNamespace": "",
+    "references": [
+        "GUID:b51717b4a66b02144bc677b416dc36aa",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:21e4dd8230563de40ae9e0643392049f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

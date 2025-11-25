@@ -12,7 +12,7 @@ public class TestScripts : MonoBehaviour
     public Image image;
     async void Start()
     {
-        await AddressableLoad.Instance.InitAddressable();
+        /*await AddressableLoad.Instance.InitAddressable();
         await AddressableLoad.Instance.UpdateAssets("Game");
         await ResourceSystem.Instance.InitResource();
 
@@ -24,7 +24,10 @@ public class TestScripts : MonoBehaviour
         await ResPool.Instance.InitializePool(Test2.Cube__1_);
 
         GameObject result =  ResPool.Instance.Get(Test2.Cube__1_);
-        result.transform.position = Vector3.up;
+        result.transform.position = Vector3.up;*/
+
+        GameObject obj =  await Addressables.LoadAssetAsync<GameObject>("Cube");
+        Instantiate(obj);
     }
 
 

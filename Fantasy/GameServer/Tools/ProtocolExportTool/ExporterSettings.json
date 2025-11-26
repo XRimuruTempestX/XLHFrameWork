@@ -1,0 +1,20 @@
+{
+    "Export": {
+        "NetworkProtocolDirectory": {
+            "Value": "..//NetworkProtocol/",
+            "Comment": "网络协议文件所在的文件夹位置"
+        },
+        "NetworkProtocolServerDirectory": {
+            "Value": "../../Server/Entity/Generate/NetworkProtocol/",
+            "Comment": "网络协议生成到服务端的文件夹位置"
+        },
+        "NetworkProtocolClientDirectory": {
+            "Value": "../../Client/Unity/Assets/Scripts/Hotfix/Generate/NetworkProtocol/",
+            "Comment": "网络协议生成到客户端的文件夹位置"
+        },
+        "Serializes": {
+            "Value": [],
+            "Comment": "自定义序列化器,暂不支持"
+        }
+    }
+}

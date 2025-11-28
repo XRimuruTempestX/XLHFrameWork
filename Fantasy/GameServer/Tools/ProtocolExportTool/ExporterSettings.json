@@ -9,7 +9,7 @@
             "Comment": "网络协议生成到服务端的文件夹位置"
         },
         "NetworkProtocolClientDirectory": {
-            "Value": "../../Client/Unity/Assets/Scripts/Hotfix/Generate/NetworkProtocol/",
+            "Value": "../../../../Assets/Scripts/Hotfix/Generate/NetworkProtocol/",
             "Comment": "网络协议生成到客户端的文件夹位置"
         },
         "Serializes": {

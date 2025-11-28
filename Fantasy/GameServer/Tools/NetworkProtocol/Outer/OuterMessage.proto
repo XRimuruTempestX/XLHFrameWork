@@ -19,3 +19,19 @@ message G2C_TestResponse // IResponse
 {
 	string Tag = 1;
 }
+
+//----------登录模块--------------
+
+message C2A_RegisterRequest // IRequest,A2C_RegisterResponse
+{
+  string userName = 1;
+  string password = 2;
+}
+
+message A2C_RegisterResponse // IResponse
+{
+  string userName = 1;
+  bool registerResult = 2;
+}
+
+//----------登录模块End--------------

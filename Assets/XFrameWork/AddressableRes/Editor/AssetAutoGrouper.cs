@@ -173,8 +173,14 @@ namespace XFrameWork.AddressableRes.Editor
                 {
                     // 确保是有效的 C# 字段名
                     string fieldName = MakeValidIdentifier(n);
-
-                    sb.AppendLine($"    public const string {fieldName} = \"{className}_{n}\";");
+                    if (fieldName.Contains("Window"))
+                    {
+                        sb.AppendLine($"    public const string {fieldName} = \"{n}\";");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"    public const string {fieldName} = \"{className}_{n}\";");
+                    }
                 }
 
                 sb.AppendLine("}");

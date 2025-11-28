@@ -21,4 +21,4 @@ MonoBehaviour:
   - using UnityEngine.UI;
   - 'using UnityEngine; '
   - using TMPro;
-  uiScriptRootPath: Assets/HotScripts/GameUI
+  uiScriptRootPath: Assets/Scripts/Hotfix

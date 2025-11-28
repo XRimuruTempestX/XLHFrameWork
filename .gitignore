@@ -43,8 +43,7 @@ Assets/AddressableAssetsData/*
 
 # Visual Studio
 .vs/
-*.csproj
-*.sln
+
 *.suo
 *.user
 *.userprefs

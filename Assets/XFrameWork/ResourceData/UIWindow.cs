@@ -1,4 +1,5 @@
 ﻿public static class UIWindow
 {
-    public const string TestWindow = "UIWindow_TestWindow";
+    public const string RegisterWindow = "RegisterWindow";
+    public const string TestWindow = "TestWindow";
 }

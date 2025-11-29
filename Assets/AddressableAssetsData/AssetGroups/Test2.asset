@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Test2
+  m_EditorClassIdentifier: 
+  m_GroupName: Test2
+  m_GUID: 0c045bec6fe56b0428fa7de2a9a8657c
+  m_SerializeEntries:
+  - m_GUID: 01328fe880946964789dbc2cef073006
+    m_Address: Cube (1)
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Game
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: b1207d283282ef34c8f78418ea3796c2, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: e9c231b81828fec4d81d0afe941f08c2, type: 2}
+    - {fileID: 11400000, guid: 8294638de49f64e4aa383e39750590b3, type: 2}

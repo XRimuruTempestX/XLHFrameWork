@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: TestArt
+  m_EditorClassIdentifier: 
+  m_GroupName: TestArt
+  m_GUID: 4ebbb25d5b214cc4084540e0d67f478f
+  m_SerializeEntries:
+  - m_GUID: 05eaf62f0e68d2d498b49b3cfe587229
+    m_Address: Image
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Game
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5bc80043fa05c7447a6f90d905a7189e
+    m_Address: Cube
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Game
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ce55331af6b22ed43964c1aa966ac4c0
+    m_Address: icon_bg3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Game
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: b1207d283282ef34c8f78418ea3796c2, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 21d992694a33bed468d5b8eaa69e24a0, type: 2}
+    - {fileID: 11400000, guid: f26ec28c5c4fed8458652a6bad1c697e, type: 2}

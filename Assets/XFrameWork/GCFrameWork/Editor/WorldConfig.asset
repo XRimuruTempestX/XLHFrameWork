@@ -19,5 +19,7 @@ MonoBehaviour:
     worldNameSpace: XGC.BattleWorld
   - worldName: SoldierWorld
     worldNameSpace: XGC.SoldierWorld
-  generateSpriptPath: Assets/XLHFramework/GCFrameWorlk/World
-  generateExctionPath: Assets/XLHFramework/GCFrameWorlk/Runtime
+  - worldName: GameWorld
+    worldNameSpace: XGC.GameWorld
+  generateSpriptPath: Assets/XFrameWork/GCFrameWork/World
+  generateExctionPath: Assets/XFrameWork/GCFrameWork/Runtime

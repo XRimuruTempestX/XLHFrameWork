@@ -28,7 +28,7 @@ namespace XLHFramework.GCFrameWorlk.Editor.Tools
         private void Awake()
         {
 
-            worldConfig = AssetDatabase.LoadAssetAtPath<WorldConfig>("Assets/XLHFramework/GCFrameWork/Editor/WorldConfig.asset");
+            worldConfig = AssetDatabase.LoadAssetAtPath<WorldConfig>("Assets/XFrameWork/GCFrameWork/Editor/WorldConfig.asset");
             selectObject = Selection.activeGameObject;
             GenerateScript();
         }

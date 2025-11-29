@@ -1,6 +1,8 @@
-﻿namespace Fantasy.Entity;
+﻿using Fantasy.Entitas.Interface;
 
-public class Account
+namespace Fantasy.Entity;
+
+public class Account : Entitas.Entity, ISupportedDataBase
 {
     public int id { get; set; }
     public string userName { get; set; }

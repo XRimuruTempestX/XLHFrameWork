@@ -4,12 +4,20 @@ using Cysharp.Threading.Tasks;
 using UnityEngine.UI;
 using UnityEngine; 
 using TMPro;
+using XGC.GameWorld;
+using XLHFramework.GCFrameWork.World;
+using XLHFramework.UnityDebuger;
 
 namespace UIFrameworlk
 {
 	public class RegisterWindow : WindowBase
 	{
 		public RegisterWindowDataWindow dataCompt;
+
+		private string userName;
+		private string passWord;
+		
+		private RegisterLogic _registerLogic;
 
 		public override void OnAwake()
 		{
@@ -26,6 +34,7 @@ namespace UIFrameworlk
 		public override async UniTask OnShow()
 		{
 			await base.OnShow();
+			_registerLogic = GameWorld.GetExitsLogicCtrl<RegisterLogic>();
 		}
 
 		public override async UniTask AnimationEnd()
@@ -49,7 +58,7 @@ namespace UIFrameworlk
 		}
 		public void AdduserNameTMP_InputFieldEndEditListener(string value)
 		{
-			Debug.Log("userName"+ value);
+			userName = value;
 		}
 		public void AddpassWordTMP_InputFieldValueChangedListener(string value)
 		{
@@ -57,12 +66,21 @@ namespace UIFrameworlk
 		}
 		public void AddpassWordTMP_InputFieldEndEditListener(string value)
 		{
-			Debug.Log("passWord"+ value);
+			passWord = value;
 
 		}
 		public void AddRegisterBtnListener()
 		{
-			
+			if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(passWord))
+			{
+				Debuger.LogError("用户名或者密码不能为空！！！！");
+				return;
+			}
+
+			if (_registerLogic != null)
+			{
+				_registerLogic.SendRegisterRequest(userName, passWord).Coroutine();
+			}
 		}
 		public void AddCancelBtnListener()
 		{

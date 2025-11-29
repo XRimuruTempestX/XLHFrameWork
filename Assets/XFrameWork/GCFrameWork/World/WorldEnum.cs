@@ -6,5 +6,6 @@ namespace XLHFramework.GCFrameWork.World
 		HallWorld,
 		BattleWorld,
 		SoldierWorld,
+		GameWorld,
 	}
 }

@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 using XLHFramework.GCFrameWork.Base;
 
 namespace XLHFramework.GCFrameWork.Runtime
@@ -6,11 +9,7 @@ namespace XLHFramework.GCFrameWork.Runtime
 	{
 		public static string worldName = "HallWorld";
 
-		private static readonly string[] LogicBehaviorExecutions = new string[]
-		{
-			"HallWorldLogic",
-			"HallWorldPlayerLogic",
-		};
+		private static readonly string[] LogicBehaviorExecutions = new string[] {};
 
 		private static readonly string[] DataBehaviorExecutions = new string[] {};
 

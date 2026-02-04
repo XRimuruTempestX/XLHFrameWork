@@ -1,0 +1,14 @@
+{
+  "name": "com.xlh.xlhpackage",
+  "displayName": "XLHFrameWorlk",
+  "version": "0.0.1",
+  "unity": "2018.3",
+  "unityRelease": "0f1",
+  "description": "This is Test Package",
+  "keywords": [
+    "Test",
+    "Package"
+  ],
+  "author": "TechX",
+  "samples": []
+}

@@ -1,0 +1,16 @@
+{
+    "name": "XLHFrameWorlk.Editor",
+    "rootNamespace": "",
+    "references": ["GUID:f2dc73e2d8bfc6d45a0df07fb71ff53b"],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

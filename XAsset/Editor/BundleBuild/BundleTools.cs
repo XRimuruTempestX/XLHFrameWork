@@ -83,7 +83,7 @@ namespace XAsset.Editor.BundleBuild
             {
                 for (int i = 0; i < moduleList.Count; i++)
                 {
-                    if (string.IsNullOrEmpty(moduleList[i].moduleName))
+                    if (!string.IsNullOrEmpty(moduleList[i].moduleName))
                     {
                         writer.WriteLine("\t\t" + moduleList[i].moduleName + ",");
                     }

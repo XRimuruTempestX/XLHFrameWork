@@ -152,7 +152,7 @@ namespace XAsset.Editor.BundleBuild
             {
                 if (BuildBundleConfigura.Instance.AssetBundleConfig[i].isBuild)
                 {
-                //    BuildBundleCompiler.BuildAssetBundle(BuildBundleConfigura.Instance.AssetBundleConfig[i], BuildType.AssetBundle);
+                    BuildBundleCompiler.BuildAssetBundle(BuildBundleConfigura.Instance.AssetBundleConfig[i], BuildType.AssetBundle);
                 }
             }
         }
@@ -168,7 +168,7 @@ namespace XAsset.Editor.BundleBuild
             {
                 if (BuildBundleConfigura.Instance.AssetBundleConfig[i].isBuild)
                 {
-                 //   BuildBundleCompiler.CopyBundleToStramingAssets(BuildBundleConfigura.Instance.AssetBundleConfig[i]);
+                    BuildBundleCompiler.CopyBundleToStramingAssets(BuildBundleConfigura.Instance.AssetBundleConfig[i]);
                 }
             }
         }
@@ -184,7 +184,7 @@ namespace XAsset.Editor.BundleBuild
                 var data = BuildBundleConfigura.Instance.AssetBundleConfig[i];
                 if (BuildBundleConfigura.Instance.AssetBundleConfig[i].isBuild)
                 {
-                //    BuildBundleCompiler.BuildAssetBundle(data, BuildType.HotPatch,hotPatchVersion,appVersion,notice);
+                    BuildBundleCompiler.BuildAssetBundle(data, BuildType.HotPatch,hotPatchVersion,appVersion,notice);
                 }
             }
         }

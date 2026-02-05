@@ -1,7 +1,10 @@
 {
-    "name": "XLHFrameWorlk.Editor",
+    "name": "XAsset.Editor",
     "rootNamespace": "",
-    "references": ["GUID:f2dc73e2d8bfc6d45a0df07fb71ff53b"],
+    "references": [
+        "GUID:7773827f184cc094e881160975ab9678",
+        "GUID:c5ecc461727906345a35491a0440694f"
+    ],
     "includePlatforms": [
         "Editor"
     ],

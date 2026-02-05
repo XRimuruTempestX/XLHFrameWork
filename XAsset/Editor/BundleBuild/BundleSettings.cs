@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using UnityEditor;
 using UnityEngine;
-using XAsset.Editor.BundleBuild;
 
 namespace XAsset.Config
 {
@@ -98,63 +97,64 @@ namespace XAsset.Config
             get { return Application.streamingAssetsPath + "/AssetBundle/"; }
         }
 
+        
+        
         /// <summary>
         /// 热更清单文件名称
         /// </summary>
-        /// <param name="moduleEnum"></param>
+        /// <param name="moduleName"></param>
         /// <returns></returns>
-        /*public string HotManifestName(BundleModuleEnum moduleEnum)
+        public string HotManifestName(string moduleName)
         {
-            return $"{moduleEnum}AssetsHotManifest_{GetPlatformName()}.json";
-        }*/
+            return $"{moduleName}AssetsHotManifest_{GetPlatformName()}.json";
+        }
 
         /// <summary>
         /// 获取资源内嵌的路径
         /// </summary>
-        /// <param name="moduleEnum"></param>
+        /// <param name="moduleName"></param>
         /// <returns></returns>
-        /*public string GetAssetsBuiltinBundlePath(BundleModuleEnum moduleEnum)
+        public string GetAssetsBuiltinBundlePath(string moduleName)
         {
-            return BuiltinAssetsPath + moduleEnum + "/";
-        }*/
+            return BuiltinAssetsPath + moduleName + "/";
+        }
 
         /// <summary>
         /// 获取解压文件路径(Unity2019 支持直接都streamingAssetsPath目录下Bundle)
         /// </summary>
-        /// <param name="moduleEnum"></param>
+        /// <param name="moduleName"></param>
         /// <returns></returns>
-        /*public string GetAssetsDecompressPath(BundleModuleEnum moduleEnum)
+        public string GetAssetsDecompressPath(string moduleName)
         {
 #if UNITY_2020_1_OR_NEWER
-            return $"{Application.persistentDataPath}/DecompressAssets/{moduleEnum.ToString()}/";
+            return $"{Application.persistentDataPath}/DecompressAssets/{moduleName.ToString()}/";
 #else
-        return BundleDecompressPath + moduleEnum + "/";
+        return BundleDecompressPath + moduleName + "/";
 #endif
-        }*/
+        }
 
         /// <summary>
         /// 获取热更文件储存路径
         /// </summary>
-        /// <param name="moduleEnum"></param>
+        /// <param name="moduleName"></param>
         /// <returns></returns>
-        /*public string GetHotAssetsPath(BundleModuleEnum moduleEnum)
+        public string GetHotAssetsPath(string moduleName)
         {
-            return HotAssetsPath + moduleEnum + "/";
-        }*/
+            return HotAssetsPath + moduleName + "/";
+        }
 
-        /*
 
 
         /// <summary>
         /// 获取配置文件名称
         /// </summary>
-        /// <param name="moduleEnum"></param>
+        /// <param name="moduleName"></param>
         /// <returns></returns>
-        public string GetBundleCfgName(BundleModuleEnum moduleEnum)
+        public string GetBundleCfgName(string moduleName)
         {
-            return $"{moduleEnum.ToString().ToLower()}bundleconfig{ABSUFFIX}";
+            return $"{moduleName.ToString().ToLower()}bundleconfig{ABSUFFIX}";
         }
-    */
+        
 
         /// <summary>
         /// 获取当前运行平台

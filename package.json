@@ -10,5 +10,8 @@
     "Package"
   ],
   "author": "TechX",
+  "dependencies": {
+    "com.unity.scriptablebuildpipeline": "2.4.3"
+  },
   "samples": []
 }

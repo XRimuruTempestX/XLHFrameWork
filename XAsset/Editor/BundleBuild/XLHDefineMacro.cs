@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using XAsset.Config;
 using XAsset.Editor.BundleBuild;
+using XAsset.Tools;
 
 [CreateAssetMenu(fileName = "XLHDefineMacro", menuName = "XLHFrameWork/宏配置")]
 public class XLHDefineMacro : ScriptableObject
@@ -16,7 +17,7 @@ public class XLHDefineMacro : ScriptableObject
         {
             if (_instance == null)
             {
-                _instance = AssetDatabase.LoadAssetAtPath<XLHDefineMacro>("Packages/com.xlh.xlhpackage/Editor/XLHDefineMacro.asset");
+                _instance = AssetDatabase.LoadAssetAtPath<XLHDefineMacro>("Packages/com.xlh.xlhpackage/XAsset/Editor/BundleBuild/XLHDefineMacro.asset");
             }
 
             if (_instance == null)
@@ -56,6 +57,7 @@ public class XLHDefineMacro : ScriptableObject
             UnityEngine.Debug.Log($"{defineMacro} Macro added!");
             isInitFrameWorlk =  true;
             BundleTools.Instance.GenerateBundleModuleEnum();
+            AssemblyCreator.CreateAsmdef();
         }
     }
 
@@ -78,13 +80,9 @@ public class XLHDefineMacro : ScriptableObject
         }
     }
 
-#if XLHFrameWork
-
-    [Button("启用")]
+    [Button("生成模块枚举类")]
     public void Test()
     {
-        Debug.Log("启用宏定义");
+        BundleTools.Instance.GenerateBundleModuleEnum();
     }
-    
-#endif
 }

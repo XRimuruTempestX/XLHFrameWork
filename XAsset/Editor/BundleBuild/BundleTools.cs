@@ -21,6 +21,20 @@ namespace XAsset.Editor.BundleBuild
                     _instance = AssetDatabase.LoadAssetAtPath<BundleTools>(XAssetPath.BundleToolsConfigPath);
                 }
 
+                if (_instance == null)
+                {
+
+                    if (!Directory.Exists(Path.GetDirectoryName(XAssetPath.BundleToolsConfigPath)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(XAssetPath.BundleToolsConfigPath) ?? string.Empty);
+                    }
+                    
+                    _instance = CreateInstance<BundleTools>();
+                    AssetDatabase.CreateAsset(_instance, XAssetPath.BundleToolsConfigPath);
+                    AssetDatabase.SaveAssets();
+                    Selection.activeObject = _instance;
+                }
+                AssetDatabase.Refresh();
                 return _instance; 
             }
         }

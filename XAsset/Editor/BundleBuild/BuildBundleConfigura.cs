@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEditor;
@@ -17,11 +18,27 @@ namespace XAsset.Editor.BundleBuild
         {
             get
             {
-                if (_instance==null)
-                { 
+                if (_instance == null)
+                {
                     _instance = AssetDatabase.LoadAssetAtPath<BuildBundleConfigura>(XAssetPath.BuildBundleConfiguraPath);
                 }
-                return _instance;
+
+                if (_instance == null)
+                {
+
+                    if (!Directory.Exists(Path.GetDirectoryName(XAssetPath.BuildBundleConfiguraPath)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(XAssetPath.BuildBundleConfiguraPath) ?? string.Empty);
+                    }
+                    
+                    _instance = CreateInstance<BuildBundleConfigura>();
+                    AssetDatabase.CreateAsset(_instance, XAssetPath.BuildBundleConfiguraPath);
+                    AssetDatabase.SaveAssets();
+                    Selection.activeObject = _instance;
+                }
+                AssetDatabase.Refresh();
+                return _instance; 
+                
             } 
         }
 

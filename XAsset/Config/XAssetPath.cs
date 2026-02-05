@@ -7,13 +7,13 @@ namespace XAsset.Config
         /// <summary>
         /// 打包模块数据配置表路径
         /// </summary>
-        public static string BuildBundleConfiguraPath = "Packages/com.xlh.xlhpackage/XAsset/Editor/BundleBuild/BuildBundleConfigura.asset";
+        public static string BuildBundleConfiguraPath = "Assets/XLHFrameWork/XAsset/Editor/BundleBuild/BuildBundleConfigura.asset";
 
         public static string BundleSettingsPath =
-            "Packages/com.xlh.xlhpackage/XAsset/Config/AssetsBundleSettings.asset";
+            "Assets/XLHFrameWork/XAsset/Config/AssetsBundleSettings.asset";
         
         public static string BundleToolsConfigPath =
-            "Packages/com.xlh.xlhpackage/XAsset/Config/BundleToolsConfig.asset";
+            "Assets/XLHFrameWork/XAsset/Config/BundleToolsConfig.asset";
 
         public static string UIEventSystemPath = "Assets/XLHFrameWork/UIFrameWork/UIFrameWorkConfig/UIBasePrefabs/EventSystem.prefab";
         public static string UICamaeraPath = "Assets/XLHFrameWork/UIFrameWork/UIFrameWorkConfig/UIBasePrefabs/UICamera.prefab";

@@ -1,3 +1,4 @@
+using System.IO;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
@@ -18,6 +19,21 @@ public class XLHDefineMacro : ScriptableObject
                 _instance = AssetDatabase.LoadAssetAtPath<XLHDefineMacro>("Packages/com.xlh.xlhpackage/Editor/XLHDefineMacro.asset");
             }
 
+            if (_instance == null)
+            {
+
+                if (!Directory.Exists("Assets/XLHFrameWork/Editor"))
+                {
+                    Directory.CreateDirectory("Assets/XLHFrameWork/Editor");
+                }
+                _instance = CreateInstance<XLHDefineMacro>();
+                _instance.isInitFrameWorlk = false;
+                _instance.defineMacro = "XLHFrameWork";
+                AssetDatabase.CreateAsset(_instance, "Assets/XLHFrameWork/Editor/XLHDefineMacro.asset");
+                AssetDatabase.SaveAssets();
+                Selection.activeObject = _instance;
+            }
+            AssetDatabase.Refresh();
             return _instance;
         }
     }

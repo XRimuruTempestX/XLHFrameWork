@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using System.IO;
+using UnityEditor;
 using UnityEngine;
 using XAsset.Editor.BundleBuild;
 
@@ -28,11 +29,26 @@ namespace XAsset.Config
         {
             get
             {
+                
                 if (_instance == null)
                 {
                     _instance = AssetDatabase.LoadAssetAtPath<BundleSettings>(XAssetPath.BundleSettingsPath);
                 }
 
+                if (_instance == null)
+                {
+
+                    if (!Directory.Exists(Path.GetDirectoryName(XAssetPath.BundleSettingsPath) ?? string.Empty))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(XAssetPath.BundleSettingsPath) ?? string.Empty);
+                    }
+                    
+                    _instance = CreateInstance<BundleSettings>();
+                    AssetDatabase.CreateAsset(_instance, XAssetPath.BundleSettingsPath);
+                    AssetDatabase.SaveAssets();
+                    Selection.activeObject = _instance;
+                }
+                AssetDatabase.Refresh();
                 return _instance;
             }
         }

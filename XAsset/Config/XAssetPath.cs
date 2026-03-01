@@ -14,6 +14,9 @@ namespace XAsset.Config
         
         public static string BundleToolsConfigPath =
             "Assets/XLHFrameWork/XAsset/Config/BundleToolsConfig.asset";
+        
+        public static string UIConfigPath =
+            "Assets/XLHFrameWork/XUIFramework/Config/UIConfig.asset";
 
         public static string UIEventSystemPath = "Assets/XLHFrameWork/UIFrameWork/UIFrameWorkConfig/UIBasePrefabs/EventSystem.prefab";
         public static string UICamaeraPath = "Assets/XLHFrameWork/UIFrameWork/UIFrameWorkConfig/UIBasePrefabs/UICamera.prefab";

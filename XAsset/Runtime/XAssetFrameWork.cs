@@ -17,6 +17,7 @@ namespace XAsset.Runtime
         
         private IDecompressAssets mDecompressAssets = null;
 
+        public bool IsInitialized { get; private set; } = false;
 
         private void Initialize()
         {
@@ -24,6 +25,7 @@ namespace XAsset.Runtime
             mResourceMgr = new XLHResourceManager();
             mDecompressAssets = new AssetsDecompressManager();
             mResourceMgr.Initlizate();
+            IsInitialized = true;
         }
 
         public async UniTask InitlizateResAsync(string bundleModule)

@@ -1,0 +1,16 @@
+{
+    "name": "Unity-Logs-Viewer.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:b12cbbdec8489aa4a87453c458d1cebd"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

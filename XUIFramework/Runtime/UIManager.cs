@@ -70,10 +70,11 @@ namespace XUIFramework
                 }
                 uiRoot = rootGo.transform;
             }
-
+   
             if (uiConfig == null)
             {
                 GameObject cameraObj = Resources.Load<GameObject>("UICamera");
+                cameraObj = GameObject.Instantiate(cameraObj);
                 GameObject.DontDestroyOnLoad(cameraObj);
                 uiCamera =  cameraObj.GetComponent<Camera>();
             }
@@ -81,6 +82,7 @@ namespace XUIFramework
             if (eventSystem == null)
             {
                 GameObject eventSystemObj = Resources.Load<GameObject>("EventSystem");
+                eventSystemObj =  GameObject.Instantiate(eventSystemObj);
                 GameObject.DontDestroyOnLoad(eventSystemObj);
                 eventSystem = eventSystemObj.GetComponent<EventSystem>();
             }

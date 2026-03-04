@@ -124,6 +124,7 @@ namespace XUIFramework
 
             if (Canvas.renderMode == RenderMode.ScreenSpaceCamera)
             {
+                Debug.LogError("UIManager.Instance.uiCamera = " + UIManager.Instance.uiCamera);
                 Canvas.worldCamera = UIManager.Instance.uiCamera;
             }
 

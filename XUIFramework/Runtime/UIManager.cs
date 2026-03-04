@@ -71,7 +71,7 @@ namespace XUIFramework
                 uiRoot = rootGo.transform;
             }
    
-            if (uiConfig == null)
+            if (uiCamera == null)
             {
                 GameObject cameraObj = Resources.Load<GameObject>("UICamera");
                 cameraObj = GameObject.Instantiate(cameraObj);

@@ -5,6 +5,8 @@ using Sirenix.Utilities;
 using Sirenix.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 
 namespace XUIFramework.Editor
 {
@@ -36,7 +38,57 @@ namespace XUIFramework.Editor
                 AssetDatabase.SaveAssets();
                 Selection.activeObject = config;
             }
+
+            CreateUICamera();
+            CreateEventSystem();
             AssetDatabase.Refresh();
+        }
+
+        private static void CreateUICamera()
+        {
+            string path = "Assets/XLHFrameWork/XUIFramework/Resources/UICamera.prefab";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
+            {
+                Debug.Log("UICamera 已存在");
+                return;
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(path)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path) ?? string.Empty);
+            }
+            GameObject go = new GameObject("UICamera");
+            Camera cam = go.AddComponent<Camera>();
+
+            cam.clearFlags = CameraClearFlags.Depth;
+            cam.orthographic = true;
+            cam.cullingMask = LayerMask.GetMask("UI");
+
+            PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+
+            Debug.Log("UICamera 已创建");
+        }
+        
+        private static void CreateEventSystem()
+        {
+            string path = "Assets/XLHFrameWork/XUIFramework/Resources/EventSystem.prefab";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
+            {
+                Debug.Log("EventSystem 已存在");
+                return;
+            }
+            if (!Directory.Exists(Path.GetDirectoryName(path)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path) ?? string.Empty);
+            }
+            GameObject go = new GameObject("EventSystem");
+            go.AddComponent<EventSystem>();
+            go.AddComponent<InputSystemUIInputModule>();
+
+            PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+
+            Debug.Log("EventSystem 已创建");
         }
     }
 }

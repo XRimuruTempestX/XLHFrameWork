@@ -2,7 +2,8 @@
     "name": "XUI.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:661cad3e055264a488345be302c7b604"
+        "GUID:661cad3e055264a488345be302c7b604",
+        "GUID:75469ad4d38634e559750d17036d5f7c"
     ],
     "includePlatforms": [
         "Editor"

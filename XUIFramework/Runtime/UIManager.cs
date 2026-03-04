@@ -3,6 +3,7 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using XAsset.Runtime;
 using XAsset.Tools;
 
@@ -24,6 +25,9 @@ namespace XUIFramework
         private const int BaseSortingOrder = 100;
         // 每个窗口占用的 Order 跨度
         private const int SortingOrderStep = 10;
+        
+        public Camera uiCamera;
+        public EventSystem  eventSystem;
 
         #endregion
 
@@ -65,6 +69,20 @@ namespace XUIFramework
                     GameObject.DontDestroyOnLoad(rootGo);
                 }
                 uiRoot = rootGo.transform;
+            }
+
+            if (uiConfig == null)
+            {
+                GameObject cameraObj = Resources.Load<GameObject>("UICamera");
+                GameObject.DontDestroyOnLoad(cameraObj);
+                uiCamera =  cameraObj.GetComponent<Camera>();
+            }
+
+            if (eventSystem == null)
+            {
+                GameObject eventSystemObj = Resources.Load<GameObject>("EventSystem");
+                GameObject.DontDestroyOnLoad(eventSystemObj);
+                eventSystem = eventSystemObj.GetComponent<EventSystem>();
             }
             
             #if UNITY_EDITOR

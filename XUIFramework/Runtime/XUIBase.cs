@@ -122,6 +122,11 @@ namespace XUIFramework
                 Debug.LogError($"[XUIBase] {Name} does not have a Canvas component on root.");
             }
 
+            if (Canvas.renderMode == RenderMode.ScreenSpaceCamera)
+            {
+                Canvas.worldCamera = UIManager.Instance.uiCamera;
+            }
+
             // 默认初始化时隐藏，避免加载后闪烁，等待 OnOpen 调用
             SetActive(false);
 

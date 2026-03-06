@@ -110,7 +110,6 @@ namespace XUIFramework
             Transform = go.transform;
             RectTransform = go.GetComponent<RectTransform>();
             Name = go.name;
-
             // 获取 Canvas 和 Raycaster，如果没有则尝试添加或报错，视需求而定
             // 这里假设每个 Panel 根节点都应该有 Canvas 以便独立管理层级
             Canvas = go.GetComponent<Canvas>();
@@ -121,10 +120,20 @@ namespace XUIFramework
             {
                 Debug.LogError($"[XUIBase] {Name} does not have a Canvas component on root.");
             }
+            // 调试日志：检查 RenderMode 和 Root Canvas 状态
+       //     Debug.LogError($"[XUIBase] {Name} Canvas.renderMode = {Canvas.renderMode}, isRootCanvas = {Canvas.isRootCanvas}");
+            
+            // 警告：如果是嵌套 Canvas，RenderMode 会继承自父 Canvas，此时自身的设置无效
+            /*if (!Canvas.isRootCanvas)
+            {
+                Debug.LogWarning($"[XUIBase] Warning: {Name} is nested under parent Canvas '{Canvas.rootCanvas.name}' ({Canvas.rootCanvas.renderMode}). Prefab RenderMode settings are ignored.");
+            }*/
 
+            // 如果当前是 Camera 模式，或者预制体期望是 Camera 但因缺少 Camera 而变成了 Overlay (针对 Root Canvas)
+            // 尝试赋值 Camera
             if (Canvas.renderMode == RenderMode.ScreenSpaceCamera)
             {
-                Debug.LogError("UIManager.Instance.uiCamera = " + UIManager.Instance.uiCamera);
+                // Debug.LogError("UIManager.Instance.uiCamera = " + UIManager.Instance.uiCamera);
                 Canvas.worldCamera = UIManager.Instance.uiCamera;
             }
 

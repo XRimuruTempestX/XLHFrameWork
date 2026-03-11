@@ -131,12 +131,13 @@ namespace XUIFramework
 
             // 如果当前是 Camera 模式，或者预制体期望是 Camera 但因缺少 Camera 而变成了 Overlay (针对 Root Canvas)
             // 尝试赋值 Camera
+            /*Debug.Log(Canvas.renderMode);
             if (Canvas.renderMode == RenderMode.ScreenSpaceCamera)
             {
                 // Debug.LogError("UIManager.Instance.uiCamera = " + UIManager.Instance.uiCamera);
                 Canvas.worldCamera = UIManager.Instance.uiCamera;
-            }
-
+            }*/
+            Canvas.worldCamera = UIManager.Instance.uiCamera;
             // 默认初始化时隐藏，避免加载后闪烁，等待 OnOpen 调用
             SetActive(false);
 

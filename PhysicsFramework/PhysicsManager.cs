@@ -8,6 +8,8 @@ namespace XLHFrameWork.PhysicsFramework
     {
         public static PhysicsManager Instance { get; private set; }
 
+        public IReadOnlyList<CollisionObject> CollisionObjects => _collisionObjects;
+
         private List<CollisionObject> _collisionObjects = new List<CollisionObject>();
         private Dictionary<int, CollisionObject> _objectMap = new Dictionary<int, CollisionObject>();
         private HashSet<CollisionPair> _previousPairs = new HashSet<CollisionPair>();

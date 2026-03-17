@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using XLHFrameWork.PhysicsFramework.GJKPhysics.Shape;
 
 namespace XLHFrameWork.PhysicsFramework.GJKPhysics.Runtime
@@ -37,7 +37,20 @@ namespace XLHFrameWork.PhysicsFramework.GJKPhysics.Runtime
                     return false;
                 }
 
+                // 添加重复点检查，防止震荡
+                for (int i = 0; i < simplex.Count; i++)
+                {
+                    if ((simplex[i] - newPos).sqrMagnitude < epsilon)
+                    {
+                        Debug.LogWarning($"[GJK] Duplicate point detected at iteration {iteration}. Count: {simplex.Count}. Point: {newPos}. Escaping oscillation.");
+                        return false;
+                    }
+                }
+
                 simplex.Add(newPos);
+
+                int prevCount = simplex.Count;
+                bool isIntersecting = false;
 
                 switch (simplex.Count)
                 {
@@ -50,134 +63,149 @@ namespace XLHFrameWork.PhysicsFramework.GJKPhysics.Runtime
                     case 4:
                         if (Tetrahedron(ref simplex, ref direction))
                         {
-                            return true;
+                            isIntersecting = true;
                         }
                         break;
                 }
 
+                // 打印每一帧的推进状态，用于排查死循环
+                Debug.Log($"[GJK] Iteration {iteration}: Simplex {prevCount} -> {simplex.Count}, Direction: {direction}, NewPos: {newPos}");
+
+                if (isIntersecting) return true;
+
                 iteration++;
             }
 
+            Debug.LogWarning("GJK max iterations reached, might be oscillating.");
             return false;
         }
 
         private bool Line(ref Simplex simplex, ref Vector3 direction)
         {
-            Vector3 A = simplex[0];
-            Vector3 B = simplex[1];
+            Vector3 a = simplex[0];
+            Vector3 b = simplex[1];
 
-            Vector3 AB = B - A;
-            Vector3 AO = -A;
+            Vector3 ab = b - a;
+            Vector3 ao = -a;
 
-            //如果两个向量夹角大于90，则需要回退为一个点
-            if (Vector3.Dot(AB, AO) > 0)
+            if (Vector3.Dot(ab, ao) > 0)
             {
-                //找垂直于AB过原点的向量
-                direction = Vector3.Cross(Vector3.Cross(AB, AO), AB);
+                direction = Vector3.Cross(Vector3.Cross(ab, ao), ab);
                 if (direction.sqrMagnitude < epsilon)
                 {
-                    // 兜底：找一个垂直 AB 的方向
-                    direction = Vector3.Cross(AB, Vector3.right);
+                    // 兜底：寻找任意垂直方向
+                    direction = Vector3.Cross(ab, Vector3.right);
                     if (direction.sqrMagnitude < epsilon)
-                        direction = Vector3.Cross(AB, Vector3.up);
+                    {
+                        direction = Vector3.Cross(ab, Vector3.up);
+                        if (direction.sqrMagnitude < epsilon)
+                        {
+                            direction = Vector3.Cross(ab, Vector3.forward);
+                        }
+                    }
                 }
-
-                if (Vector3.Dot(direction, AO) < epsilon)
-                {
-                    direction = -direction;
-                }
-                
             }
             else
             {
-                simplex.Set(A);
-                direction = AO;
+                simplex.Set(a);
+                direction = ao;
             }
-
             return false;
         }
 
         private bool Triangle(ref Simplex simplex, ref Vector3 direction)
         {
-            Vector3 A = simplex[0];
-            Vector3 B = simplex[1];
-            Vector3 C = simplex[2];
+            Vector3 a = simplex[0];
+            Vector3 b = simplex[1];
+            Vector3 c = simplex[2];
 
-            Vector3 AB = B - A;
-            Vector3 AC = C - A;
-            Vector3 AO = -A;
-            //三角形法线
-            Vector3 ABC = Vector3.Cross(AB, AC);
+            Vector3 ab = b - a;
+            Vector3 ac = c - a;
+            Vector3 ao = -a;
 
-            if (Vector3.Dot(ABC, AO) < 0)
+            Vector3 abc = Vector3.Cross(ab, ac);
+
+            // 检查原点是否在 AC 的外侧
+            if (Vector3.Dot(Vector3.Cross(abc, ac), ao) > 0)
             {
-                simplex.Set(A, C, B);
-
-                B = simplex[1];
-                C = simplex[2];
-
-                AB = B - A;
-                AC = C - A;
-
-                ABC = Vector3.Cross(AB, AC); // 重新算
+                if (Vector3.Dot(ac, ao) > 0)
+                {
+                    simplex.Set(a, c);
+                    direction = Vector3.Cross(Vector3.Cross(ac, ao), ac);
+                }
+                else
+                {
+                    simplex.Set(a, c);
+                    return Line(ref simplex, ref direction);
+                }
+            }
+            
+            // 检查原点是否在 AB 的外侧
+            if (Vector3.Dot(Vector3.Cross(ab, abc), ao) > 0)
+            {
+                simplex.Set(a, b);
+                return Line(ref simplex, ref direction);
             }
 
-            Vector3 AB_Out = Vector3.Cross(ABC, AB);
-
-            if (Vector3.Dot(AB_Out, AO) > 0)
+            // 原点在三角形上方或下方
+            if (Vector3.Dot(abc, ao) > 0)
             {
-                //同侧  则在外部 进行回退 去除C 因为C点连成的简单型没有包裹原点
-                simplex.Set(A,B);
-                Line(ref simplex, ref direction);
-                return false;
+                direction = abc;
+            }
+            else
+            {
+                simplex.Set(a, c, b); // 保持法线朝向原点
+                direction = -abc;
             }
 
-            Vector3 AC_Out = Vector3.Cross(AC, ABC);
-            if (Vector3.Dot(AC_Out, AO) > 0)
+            // 处理方向为零的极特殊情况
+            if (direction.sqrMagnitude < epsilon)
             {
-                //同侧  则在外部 进行回退 去除C 因为C点连成的简单型没有包裹原点
-                simplex.Set(A,C);
-                Line(ref simplex, ref direction);
-                return false;
+                direction = Vector3.up; 
             }
 
-            direction = ABC;
             return false;
         }
 
         private bool Tetrahedron(ref Simplex simplex, ref Vector3 direction)
         {
-            Vector3 A = simplex[0];
-            Vector3 B = simplex[1];
-            Vector3 C = simplex[2];
-            Vector3 D = simplex[3];
+            Vector3 a = simplex[0];
+            Vector3 b = simplex[1];
+            Vector3 c = simplex[2];
+            Vector3 d = simplex[3];
 
-            Vector3 AO = -A;
+            Vector3 ao = -a;
+            Vector3 ab = b - a;
+            Vector3 ac = c - a;
+            Vector3 ad = d - a;
 
-            // --- 面 ABC ---
-            Vector3 ABC = Vector3.Cross(B - A, C - A);
-            if (Vector3.Dot(ABC, AO) > 0)
+            // 面的法线
+            Vector3 abc = Vector3.Cross(ab, ac);
+            Vector3 acd = Vector3.Cross(ac, ad);
+            Vector3 adb = Vector3.Cross(ad, ab);
+
+            // 检查原点是否在 ABC 面外
+            if (Vector3.Dot(abc, ao) > 0)
             {
-                simplex.Set(A, B, C);
+                simplex.Set(a, b, c);
                 return Triangle(ref simplex, ref direction);
             }
 
-            // --- 面 ACD ---
-            Vector3 ACD = Vector3.Cross(C - A, D - A);
-            if (Vector3.Dot(ACD, AO) > 0)
+            // 检查原点是否在 ACD 面外
+            if (Vector3.Dot(acd, ao) > 0)
             {
-                simplex.Set(A, C, D);
+                simplex.Set(a, c, d);
                 return Triangle(ref simplex, ref direction);
             }
 
-            // --- 面 ADB ---
-            Vector3 ADB = Vector3.Cross(D - A, B - A);
-            if (Vector3.Dot(ADB, AO) > 0)
+            // 检查原点是否在 ADB 面外
+            if (Vector3.Dot(adb, ao) > 0)
             {
-                simplex.Set(A, D, B);
+                simplex.Set(a, d, b);
                 return Triangle(ref simplex, ref direction);
             }
 
+            // 原点在四面体内部
             return true;
         }
     }

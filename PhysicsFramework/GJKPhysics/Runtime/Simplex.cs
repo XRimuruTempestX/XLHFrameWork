@@ -3,33 +3,35 @@ using UnityEngine;
 
 namespace XLHFrameWork.PhysicsFramework.GJKPhysics.Runtime
 {
-    public class Simplex
+    public struct Simplex
     {
-        private List<Vector3> points = new List<Vector3>();
+        private Vector3 v0, v1, v2, v3;
 
-        public int Count => points.Count;
+        public int Count { get; private set; }
 
         public Vector3 this[int i]
         {
-            get => points[i];
-            set => points[i] = value;
+            get
+            {
+                if (i == 0) return v0;
+                if (i == 1) return v1;
+                if (i == 2) return v2;
+                return v3;
+            }
         }
 
         public void Add(Vector3 p)
         {
-            points.Insert(0, p); 
-            // 新点放最前
+            v3 = v2;
+            v2 = v1;
+            v1 = v0;
+            v0 = p;
+            Count = Mathf.Min(Count + 1, 4);
         }
 
-        public void RemoveAt(int index)
-        {
-            points.RemoveAt(index);
-        }
-
-        public void Set(params Vector3[] pts)
-        {
-            points.Clear();
-            points.AddRange(pts);
-        }
+        public void Set(Vector3 a) { v0 = a; Count = 1; }
+        public void Set(Vector3 a, Vector3 b) { v0 = a; v1 = b; Count = 2; }
+        public void Set(Vector3 a, Vector3 b, Vector3 c) { v0 = a; v1 = b; v2 = c; Count = 3; }
+        public void Set(Vector3 a, Vector3 b, Vector3 c, Vector3 d) { v0 = a; v1 = b; v2 = c; v3 = d; Count = 4; }
     }
 }

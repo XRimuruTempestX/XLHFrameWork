@@ -89,7 +89,7 @@ namespace XLHFrameWork.PhysicsFramework
             Bounds = new AABB(Position - halfSize, Position + halfSize);
 
             // Update GJK shape
-            _shape.UpdateVertices(Position.ToVector3(), transform.rotation, Size.ToVector3());
+            _shape.UpdateShape(Position.ToVector3(), transform.rotation, Size.ToVector3());
         }
 
         private void OnValidate()

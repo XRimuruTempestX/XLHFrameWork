@@ -4,43 +4,31 @@ namespace XLHFrameWork.PhysicsFramework.GJKPhysics.Shape
 {
     public class BoxShape : IConvexShape
     {
-        public Vector3[] vertices;
+        public Vector3 Center { get; private set; }
+        public Quaternion Rotation { get; private set; }
+        public Vector3 Extents { get; private set; }
         
-        public void UpdateVertices(Vector3 center, Quaternion rotation, Vector3 size)
+        public void UpdateShape(Vector3 center, Quaternion rotation, Vector3 size)
         {
-            Vector3 extents = size * 0.5f;
-            if (vertices == null || vertices.Length != 8)
-            {
-                vertices = new Vector3[8];
-            }
-            
-            // Generate 8 corners
-            vertices[0] = center + rotation * new Vector3( extents.x,  extents.y,  extents.z);
-            vertices[1] = center + rotation * new Vector3( extents.x,  extents.y, -extents.z);
-            vertices[2] = center + rotation * new Vector3( extents.x, -extents.y,  extents.z);
-            vertices[3] = center + rotation * new Vector3( extents.x, -extents.y, -extents.z);
-            vertices[4] = center + rotation * new Vector3(-extents.x,  extents.y,  extents.z);
-            vertices[5] = center + rotation * new Vector3(-extents.x,  extents.y, -extents.z);
-            vertices[6] = center + rotation * new Vector3(-extents.x, -extents.y,  extents.z);
-            vertices[7] = center + rotation * new Vector3(-extents.x, -extents.y, -extents.z);
+            Center = center;
+            Rotation = rotation;
+            Extents = size * 0.5f;
         }
 
         public Vector3 Support(Vector3 direction)
         {
-            float maxDot = float.MinValue;
-            Vector3 best = Vector3.zero;
-
-            foreach (var v in vertices)
-            {
-                float dot = Vector3.Dot(v, direction);
-                if (dot > maxDot)
-                {
-                    maxDot = dot;
-                    best = v;
-                }
-            }
-
-            return best;
+            // 1. 将搜索方向转换到 Box 的本地坐标系
+            Vector3 localDir = Quaternion.Inverse(Rotation) * direction;
+            
+            // 2. 在本地坐标系中找最远点 (利用 Extents 和符号)
+            Vector3 localSupport = new Vector3(
+                Mathf.Sign(localDir.x) * Extents.x,
+                Mathf.Sign(localDir.y) * Extents.y,
+                Mathf.Sign(localDir.z) * Extents.z
+            );
+            
+            // 3. 将本地最远点转换回世界坐标系
+            return Center + Rotation * localSupport;
         }
     }
 }

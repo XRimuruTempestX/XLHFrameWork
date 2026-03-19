@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GJK Triangle Voronoi Region Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #569cd6; }
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .canvas-container {
+            position: relative;
+            background-color: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        canvas {
+            cursor: crosshair;
+        }
+        .panel {
+            background-color: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            padding: 20px;
+            flex: 1;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #1177bb; }
+        .math-block {
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: Consolas, monospace;
+            margin-bottom: 15px;
+            border-left: 4px solid #c586c0;
+        }
+        .highlight-ab { color: #ce9178; font-weight: bold; }
+        .highlight-ac { color: #4fc1ff; font-weight: bold; }
+        .highlight-abc { color: #dcdcaa; font-weight: bold; }
+        .highlight-out { color: #f44336; font-weight: bold; }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            pointer-events: none;
+            display: none;
+            font-size: 14px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>GJK Triangle Voronoi Cross-Product Demo</h1>
+    <p>拖动顶点 B 或 C 改变三角形形状，观察外侧法线始终自动指向三角形外部的神奇数学特性。</p>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="gjkCanvas" width="600" height="600"></canvas>
+            <div id="tooltip" class="tooltip"></div>
+        </div>
+        
+        <div class="panel">
+            <div class="controls">
+                <button id="btnCCW">逆时针绕序 (ABC朝上)</button>
+                <button id="btnCW">顺时针绕序 (ABC朝下)</button>
+            </div>
+            
+            <h3>当前状态</h3>
+            <p>绕序: <strong id="windingStatus" style="color:#4ec9b0">逆时针 (CCW)</strong></p>
+            <p>法线 ABC (Z轴): <strong id="normalStatus">朝向屏幕外 (正)</strong></p>
+            
+            <div class="math-block">
+                <div style="color: #6a9955; margin-bottom: 8px;">// 1. 面法线 (右手定则)</div>
+                Vector3 <span class="highlight-abc">abc</span> = Cross(<span class="highlight-ab">ab</span>, <span class="highlight-ac">ac</span>);
+            </div>
+            
+            <div class="math-block">
+                <div style="color: #6a9955; margin-bottom: 8px;">// 2. AC边的外侧法线 (永远朝外!)</div>
+                Vector3 ac_out = Cross(<span class="highlight-abc">abc</span>, <span class="highlight-ac">ac</span>);
+            </div>
+
+            <div class="math-block">
+                <div style="color: #6a9955; margin-bottom: 8px;">// 3. AB边的外侧法线 (永远朝外!)</div>
+                Vector3 ab_out = Cross(<span class="highlight-ab">ab</span>, <span class="highlight-abc">abc</span>);
+            </div>
+            
+            <div style="margin-top: 20px; line-height: 1.6;">
+                <h4 style="color:#ce9178">原理解释：</h4>
+                <p>在 2D 屏幕投影下（假设 A 为原点）：</p>
+                <ul style="padding-left: 20px;">
+                    <li>如果 <span class="highlight-ab">AB</span> 到 <span class="highlight-ac">AC</span> 是逆时针，那么法线 <span class="highlight-abc">ABC</span> 指向屏幕外。此时用右手从屏幕外握向 <span class="highlight-ac">AC</span>，大拇指必然指向 AC 的右侧（即三角形外部）。</li>
+                    <li>如果 <span class="highlight-ab">AB</span> 到 <span class="highlight-ac">AC</span> 是顺时针，那么法线 <span class="highlight-abc">ABC</span> 指向屏幕内。此时用右手从屏幕内握向 <span class="highlight-ac">AC</span>，大拇指翻转 180 度，依然指向 AC 的左侧（即三角形外部）。</li>
+                </ul>
+                <p style="color:#dcdcaa; font-weight:bold;">结论：叉乘的顺序天然自带了拓扑信息，无需判断正反面！</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gjkCanvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+        
+        // 中心点为 A
+        const origin = { x: 300, y: 300 };
+        
+        // 顶点定义 (相对 A 的坐标)
+        let points = {
+            B: { x: 150, y: -100 },
+            C: { x: -100, y: -150 }
+        };
+        
+        let draggingPoint = null;
+
+        // 基础向量数学
+        function sub(v1, v2) { return { x: v1.x - v2.x, y: v1.y - v2.y }; }
+        function add(v1, v2) { return { x: v1.x + v2.x, y: v1.y + v2.y }; }
+        function dot(v1, v2) { return v1.x * v2.x + v1.y * v2.y; }
+        // 2D 伪叉乘 (Z分量)
+        function cross2D(v1, v2) { return v1.x * v2.y - v1.y * v2.x; }
+        // 3D 叉乘投影到 2D (已知一个向量只有Z分量)
+        // cross( (0,0,z), (x,y,0) ) = (-z*y, z*x, 0)
+        function crossZ_V(z, v) { return { x: -z * v.y, y: z * v.x }; }
+        // cross( (x,y,0), (0,0,z) ) = (y*z, -x*z, 0)
+        function crossV_Z(v, z) { return { x: v.y * z, y: -v.x * z }; }
+        
+        function normalize(v) {
+            const len = Math.sqrt(v.x * v.x + v.y * v.y);
+            if (len === 0) return {x:0, y:0};
+            return { x: v.x / len, y: v.y / len };
+        }
+        function scale(v, s) { return { x: v.x * s, y: v.y * s }; }
+
+        function drawArrow(fromX, fromY, toX, toY, color, width = 2, text = "") {
+            const headlen = 10;
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const angle = Math.atan2(dy, dx);
+            
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.stroke();
+            
+            if (text) {
+                ctx.fillStyle = color;
+                ctx.font = "14px Consolas";
+                ctx.fillText(text, toX + 10, toY + 10);
+            }
+        }
+
+        function drawPoint(p, label, color) {
+            const worldX = origin.x + p.x;
+            const worldY = origin.y + p.y;
+            ctx.beginPath();
+            ctx.arc(worldX, worldY, 8, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.fillStyle = "#fff";
+            ctx.font = "16px Consolas";
+            ctx.fillText(label, worldX - 5, worldY - 15);
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, origin.y); ctx.lineTo(canvas.width, origin.y);
+            ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, canvas.height);
+            ctx.stroke();
+
+            // 向量 AB, AC
+            const ab = points.B;
+            const ac = points.C;
+            
+            // 1. ABC 法线 (Z轴)
+            const abcZ = cross2D(ab, ac);
+            const winding = abcZ > 0 ? "逆时针 (CCW)" : "顺时针 (CW)";
+            const normalDir = abcZ > 0 ? "朝向屏幕内 (负Z)" : "朝向屏幕外 (正Z)"; // 屏幕Y朝下，右手系调整
+            
+            document.getElementById('windingStatus').innerText = winding;
+            document.getElementById('windingStatus').style.color = abcZ > 0 ? "#4ec9b0" : "#ce9178";
+            document.getElementById('normalStatus').innerText = normalDir;
+            
+            // 绘制三角形填充
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(origin.x + ab.x, origin.y + ab.y);
+            ctx.lineTo(origin.x + ac.x, origin.y + ac.y);
+            ctx.closePath();
+            ctx.fillStyle = abcZ > 0 ? "rgba(78, 201, 176, 0.15)" : "rgba(206, 145, 120, 0.15)";
+            ctx.fill();
+
+            // 绘制 AB, AC 边
+            drawArrow(origin.x, origin.y, origin.x + ab.x, origin.y + ab.y, "#ce9178", 3, "AB");
+            drawArrow(origin.x, origin.y, origin.x + ac.x, origin.y + ac.y, "#4fc1ff", 3, "AC");
+            
+            // 2. AC 外侧法线: Cross(ABC, AC)
+            // 在我们的 2D 屏幕系(Y朝下)中，实际数学是：
+            // 如果计算3D叉乘，假定Z轴朝外，Z = cross2D(X,Y) * -1 (因为Y朝下反转了右手系)
+            // 为了直观展示代码逻辑，我们直接模拟：
+            // AC_OUT = Cross(ABC, AC)
+            // AB_OUT = Cross(AB, ABC)
+            
+            // 为了匹配 Unity (左手系) 且 Y朝上 的视觉习惯，我们把数学稍微转换一下以符合屏幕展示
+            // 核心定理不变：无论怎么转，画出来的红色箭头必然朝向三角形外面！
+            const actualZ = cross2D(ab, ac); // >0 顺时针(Y朝下时), <0 逆时针
+            
+            // ac_out = cross(z_vec, ac)
+            let ac_out = crossZ_V(actualZ, ac);
+            ac_out = scale(normalize(ac_out), 80);
+            
+            // ab_out = cross(ab, z_vec)
+            let ab_out = crossV_Z(ab, actualZ);
+            ab_out = scale(normalize(ab_out), 80);
+
+            // 绘制外侧法线 (从边的中点出发)
+            const midAC = { x: ac.x/2, y: ac.y/2 };
+            drawArrow(origin.x + midAC.x, origin.y + midAC.y, 
+                     origin.x + midAC.x + ac_out.x, origin.y + midAC.y + ac_out.y, 
+                     "#f44336", 3, "Cross(ABC, AC)");
+
+            const midAB = { x: ab.x/2, y: ab.y/2 };
+            drawArrow(origin.x + midAB.x, origin.y + midAB.y, 
+                     origin.x + midAB.x + ab_out.x, origin.y + midAB.y + ab_out.y, 
+                     "#f44336", 3, "Cross(AB, ABC)");
+
+            // 绘制顶点
+            drawPoint({x:0, y:0}, "A", "#dcdcaa");
+            drawPoint(points.B, "B", "#ce9178");
+            drawPoint(points.C, "C", "#4fc1ff");
+            
+            // 绘制 ABC 法线提示 (在A点)
+            ctx.beginPath();
+            ctx.arc(origin.x, origin.y, 15, 0, 2*Math.PI);
+            ctx.strokeStyle = "#dcdcaa";
+            ctx.setLineDash([2, 2]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            if (actualZ < 0) { // 朝外 (圆点)
+                ctx.beginPath(); ctx.arc(origin.x, origin.y, 3, 0, 2*Math.PI); ctx.fillStyle="#dcdcaa"; ctx.fill();
+            } else { // 朝内 (叉叉)
+                ctx.beginPath(); ctx.moveTo(origin.x-5, origin.y-5); ctx.lineTo(origin.x+5, origin.y+5); ctx.stroke();
+                ctx.moveTo(origin.x+5, origin.y-5); ctx.lineTo(origin.x-5, origin.y+5); ctx.stroke();
+            }
+        }
+
+        // 交互逻辑
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left - origin.x;
+            const mouseY = e.clientY - rect.top - origin.y;
+
+            if (Math.hypot(points.B.x - mouseX, points.B.y - mouseY) < 15) draggingPoint = 'B';
+            else if (Math.hypot(points.C.x - mouseX, points.C.y - mouseY) < 15) draggingPoint = 'C';
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!draggingPoint) return;
+            const rect = canvas.getBoundingClientRect();
+            points[draggingPoint].x = e.clientX - rect.left - origin.x;
+            points[draggingPoint].y = e.clientY - rect.top - origin.y;
+            update();
+        });
+
+        canvas.addEventListener('mouseup', () => draggingPoint = null);
+        canvas.addEventListener('mouseleave', () => draggingPoint = null);
+
+        document.getElementById('btnCCW').addEventListener('click', () => {
+            points = { B: { x: 150, y: -100 }, C: { x: -100, y: -150 } };
+            update();
+        });
+        
+        document.getElementById('btnCW').addEventListener('click', () => {
+            points = { C: { x: 150, y: -100 }, B: { x: -100, y: -150 } };
+            update();
+        });
+
+        update();
+    </script>
+</body>
+</html>

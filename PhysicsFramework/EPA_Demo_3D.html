@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D EPA (Expanding Polytope Algorithm) Visualization</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1e1e1e; font-family: 'Segoe UI', sans-serif; color: #fff; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; }
+        #ui-panel {
+            position: absolute; top: 10px; right: 10px; width: 320px;
+            background: rgba(37, 37, 38, 0.9); border: 1px solid #3e3e42;
+            padding: 15px; border-radius: 4px; display: flex; flex-direction: column; gap: 10px;
+            max-height: 90vh; overflow-y: auto;
+        }
+        h3 { margin: 0 0 10px 0; color: #569cd6; font-size: 16px; }
+        button {
+            background: #0e639c; color: white; border: none; padding: 8px;
+            border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;
+        }
+        button:hover { background: #1177bb; }
+        button:disabled { background: #4a4a4a; cursor: not-allowed; }
+        .status-row { font-size: 12px; display: flex; justify-content: space-between; font-family: Consolas, monospace; }
+        .slider-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+        input[type=range] { flex: 1; }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; margin-top: 5px; }
+        .color-box { width: 12px; height: 12px; border-radius: 2px; border: 1px solid #fff; }
+        #step-list {
+            list-style: none; padding: 0; margin: 0; border: 1px solid #3e3e42;
+            max-height: 200px; overflow-y: auto; background: #1e1e1e; font-size: 12px;
+        }
+        #step-list li { padding: 4px 8px; cursor: pointer; border-bottom: 1px solid #333; }
+        #step-list li:hover { background: #2a2d2e; }
+        #step-list li.active { background: #094771; color: #fff; }
+    </style>
+    <!-- Import Three.js and OrbitControls via CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div id="ui-panel">
+        <h3>3D EPA Visualization</h3>
+        
+        <div class="status-row">
+            <span>Collision:</span>
+            <span id="collision-status" style="color: #4ec9b0">None</span>
+        </div>
+        
+        <div class="slider-row">
+            <span>Shape B X:</span>
+            <input type="range" id="posX" min="-3" max="3" step="0.01" value="1.5">
+        </div>
+        <div class="slider-row">
+            <span>Shape B Y:</span>
+            <input type="range" id="posY" min="-3" max="3" step="0.01" value="0.5">
+        </div>
+        <div class="slider-row">
+            <span>Shape B Z:</span>
+            <input type="range" id="posZ" min="-3" max="3" step="0.01" value="0">
+        </div>
+
+        <div style="border-top: 1px solid #3e3e42; margin: 5px 0;"></div>
+
+        <div class="status-row">
+            <span>EPA Iterations:</span>
+            <span id="epa-count">0</span>
+        </div>
+        <div class="status-row">
+            <span>Current Depth:</span>
+            <span id="epa-depth">0.00</span>
+        </div>
+
+        <div style="display:flex; gap:5px;">
+            <button id="btn-prev" disabled>Prev</button>
+            <button id="btn-next" disabled>Next</button>
+        </div>
+        <button id="btn-auto">Auto Play</button>
+
+        <div style="font-size: 12px; color: #aaa; margin-top:5px;">EPA Steps:</div>
+        <ul id="step-list"></ul>
+
+        <div style="margin-top: 10px;">
+            <div class="legend-item"><div class="color-box" style="background:#00aaff"></div>Shape A (Box)</div>
+            <div class="legend-item"><div class="color-box" style="background:#ffaa00"></div>Shape B (Tetrahedron)</div>
+            <div class="legend-item"><div class="color-box" style="background:rgba(255,255,255,0.2)"></div>Polytope (White)</div>
+            <div class="legend-item"><div class="color-box" style="background:#ff00ff"></div>Normal (Pink)</div>
+            <div class="legend-item"><div class="color-box" style="background:#00ff00"></div>New Point (Green)</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 3D Scene Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1e1e1e);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(5, 4, 8);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
+        scene.add(gridHelper);
+        const axesHelper = new THREE.AxesHelper(2);
+        scene.add(axesHelper);
+
+        // --- Physics Shapes (Visual & Logical) ---
+        
+        // Shape A: Box at origin
+        const geoA = new THREE.BoxGeometry(2, 2, 2);
+        const matA = new THREE.MeshStandardMaterial({ 
+            color: 0x00aaff, transparent: true, opacity: 0.5, wireframe: false 
+        });
+        const meshA = new THREE.Mesh(geoA, matA);
+        scene.add(meshA);
+        const wireA = new THREE.LineSegments(new THREE.EdgesGeometry(geoA), new THREE.LineBasicMaterial({ color: 0x00aaff }));
+        meshA.add(wireA);
+
+        // Shape B: Tetrahedron (Triangle Pyramid)
+        const geoB = new THREE.TetrahedronGeometry(1.5);
+        const matB = new THREE.MeshStandardMaterial({ 
+            color: 0xffaa00, transparent: true, opacity: 0.5, wireframe: false 
+        });
+        const meshB = new THREE.Mesh(geoB, matB);
+        meshB.position.set(1.5, 0.5, 0);
+        scene.add(meshB);
+        const wireB = new THREE.LineSegments(new THREE.EdgesGeometry(geoB), new THREE.LineBasicMaterial({ color: 0xffaa00 }));
+        meshB.add(wireB);
+
+        // Helper Objects for EPA Visualization
+        const polytopeGroup = new THREE.Group();
+        scene.add(polytopeGroup);
+
+        const debugGroup = new THREE.Group(); // For points, arrows
+        scene.add(debugGroup);
+
+        // --- Physics Logic (JS Implementation of GJK/EPA) ---
+
+        class Vec3 {
+            constructor(x=0, y=0, z=0) { this.x=x; this.y=y; this.z=z; }
+            sub(v) { return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z); }
+            add(v) { return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z); }
+            dot(v) { return this.x*v.x + this.y*v.y + this.z*v.z; }
+            cross(v) { return new Vec3(this.y*v.z - this.z*v.y, this.z*v.x - this.x*v.z, this.x*v.y - this.y*v.x); }
+            magSq() { return this.x*this.x + this.y*this.y + this.z*this.z; }
+            mag() { return Math.sqrt(this.magSq()); }
+            norm() { const m = this.mag(); return m>1e-6 ? new Vec3(this.x/m, this.y/m, this.z/m) : new Vec3(); }
+            mul(s) { return new Vec3(this.x*s, this.y*s, this.z*s); }
+            clone() { return new Vec3(this.x, this.y, this.z); }
+            toThree() { return new THREE.Vector3(this.x, this.y, this.z); }
+        }
+
+        function getBoxSupport(dir) {
+            // Box size 2x2x2 (half 1)
+            return new Vec3(
+                Math.sign(dir.x), Math.sign(dir.y), Math.sign(dir.z)
+            );
+        }
+
+        function getTetraSupport(dir, pos, rot) {
+            // Local verts of TetrahedronGeometry(1.5)
+            // Three.js generates vertices. Let's hardcode a simpler one or extract.
+            // Vertices of regular tetrahedron: (1,1,1), (1,-1,-1), (-1,1,-1), (-1,-1,1) scaled
+            const s = 1.5 / Math.sqrt(3);
+            const verts = [
+                new Vec3(s, s, s), new Vec3(s, -s, -s),
+                new Vec3(-s, s, -s), new Vec3(-s, -s, s)
+            ];
+            
+            let bestDot = -Infinity;
+            let bestV = null;
+            
+            // Just apply translation for support (ignoring rotation for demo simplicity)
+            for(let v of verts) {
+                const worldV = v.add(pos);
+                const d = worldV.dot(dir);
+                if (d > bestDot) { bestDot = d; bestV = worldV; }
+            }
+            return bestV;
+        }
+
+        function support(dir) {
+            const posB = new Vec3(meshB.position.x, meshB.position.y, meshB.position.z);
+            const sA = getBoxSupport(dir);
+            const sB = getTetraSupport(dir.mul(-1), posB);
+            return sA.sub(sB);
+        }
+
+        // GJK State
+        let simplex = [];
+
+        function runGJK() {
+            simplex = [];
+            let d = new Vec3(1, 0, 0); // Random dir
+            let a = support(d);
+            simplex.push(a);
+            d = a.mul(-1);
+
+            for(let i=0; i<32; i++) {
+                a = support(d);
+                if (a.dot(d) < 0) return false;
+                simplex.push(a);
+                if (doSimplex(d)) return true;
+            }
+            return false;
+        }
+
+        function doSimplex(dir) {
+            // Simplified 3D GJK Simplex Solver
+            const a = simplex[simplex.length-1];
+            const ao = a.mul(-1);
+            
+            if (simplex.length === 2) {
+                // Line
+                const b = simplex[0];
+                const ab = b.sub(a);
+                const abPerp = ab.cross(ao).cross(ab);
+                dir.x=abPerp.x; dir.y=abPerp.y; dir.z=abPerp.z;
+            } else if (simplex.length === 3) {
+                // Triangle
+                const b = simplex[1];
+                const c = simplex[0];
+                const ab = b.sub(a);
+                const ac = c.sub(a);
+                const abc = ab.cross(ac);
+                
+                if (abc.cross(ac).dot(ao) > 0) {
+                    if (ac.dot(ao) > 0) { simplex.splice(1,1); dir.x=ac.cross(ao).cross(ac).x; /*...*/ }
+                    else { /* star case... simplified for demo: assume ac/ab regions */ 
+                        simplex.splice(1,1); 
+                        const t = ac.cross(ao).cross(ac); dir.x=t.x; dir.y=t.y; dir.z=t.z; 
+                    } 
+                } else if (ab.cross(abc).dot(ao) > 0) {
+                    simplex.splice(0,1);
+                    const t = ab.cross(ao).cross(ab); dir.x=t.x; dir.y=t.y; dir.z=t.z;
+                } else {
+                    if (abc.dot(ao) > 0) { dir.x=abc.x; dir.y=abc.y; dir.z=abc.z; }
+                    else { 
+                        dir.x=-abc.x; dir.y=-abc.y; dir.z=-abc.z; 
+                        // Swap winding
+                        simplex[0]=b; simplex[1]=c;
+                    }
+                }
+            } else if (simplex.length === 4) {
+                // Tetrahedron
+                const b = simplex[2];
+                const c = simplex[1];
+                const d = simplex[0];
+                
+                const ab = b.sub(a);
+                const ac = c.sub(a);
+                const ad = d.sub(a);
+                
+                const abc = ab.cross(ac);
+                const acd = ac.cross(ad);
+                const adb = ad.cross(ab);
+                
+                if (abc.dot(ao) > 0) { simplex.splice(0,1); dir.x=abc.x; dir.y=abc.y; dir.z=abc.z; }
+                else if (acd.dot(ao) > 0) { simplex.splice(2,1); dir.x=acd.x; dir.y=acd.y; dir.z=acd.z; }
+                else if (adb.dot(ao) > 0) { simplex.splice(1,1); dir.x=adb.x; dir.y=adb.y; dir.z=adb.z; }
+                else return true; // Origin inside
+            }
+            return false;
+        }
+
+        // EPA Implementation
+        let epaSteps = [];
+        let currentStep = -1;
+        let epaTimer = null;
+
+        function runEPA() {
+            epaSteps = [];
+            // Ensure simplex is Tetrahedron
+            // GJK usually returns 4 points. If less, we need to blow it up (not handled in simple demo)
+            if (simplex.length < 4) {
+                console.warn("Simplex < 4, cannot run EPA robustly in this demo");
+                return;
+            }
+
+            // Init Faces
+            // Winding: Assume normal points out. Origin is inside. Dot(n, a) > 0
+            let faces = [
+                {a: simplex[0], b: simplex[1], c: simplex[2]},
+                {a: simplex[0], b: simplex[2], c: simplex[3]},
+                {a: simplex[0], b: simplex[3], c: simplex[1]},
+                {a: simplex[1], b: simplex[3], c: simplex[2]}
+            ];
+
+            // Correct normals
+            faces.forEach(f => {
+                const n = f.b.sub(f.a).cross(f.c.sub(f.a)).norm();
+                if (n.dot(f.a) < 0) {
+                    const t = f.b; f.b = f.c; f.c = t; // Flip
+                }
+                f.normal = f.b.sub(f.a).cross(f.c.sub(f.a)).norm();
+                f.dist = f.normal.dot(f.a);
+            });
+
+            // Record Step 0
+            epaSteps.push({
+                type: 'init',
+                faces: JSON.parse(JSON.stringify(faces)),
+                desc: "Initial Simplex (Tetrahedron)"
+            });
+
+            for(let i=0; i<20; i++) { // Max iterations
+                // Find closest
+                let bestFace = faces[0];
+                let minDst = bestFace.dist;
+                let bestIdx = 0;
+
+                for(let j=1; j<faces.length; j++) {
+                    if (faces[j].dist < minDst) {
+                        minDst = faces[j].dist;
+                        bestFace = faces[j];
+                        bestIdx = j;
+                    }
+                }
+
+                // Support in normal
+                const p = support(bestFace.normal);
+                const d = p.dot(bestFace.normal);
+
+                if (d - minDst < 0.001) {
+                    // Converged
+                    epaSteps.push({
+                        type: 'done',
+                        faces: JSON.parse(JSON.stringify(faces)),
+                        normal: bestFace.normal,
+                        depth: d,
+                        desc: `Converged! Depth: ${d.toFixed(3)}`
+                    });
+                    break;
+                }
+
+                // Expand: Find horizon
+                let edges = [];
+                let removeIndices = [];
+
+                for(let j=0; j<faces.length; j++) {
+                    if (faces[j].normal.dot(p.sub(faces[j].a)) > 0) {
+                        removeIndices.push(j);
+                        addEdge(edges, faces[j].a, faces[j].b);
+                        addEdge(edges, faces[j].b, faces[j].c);
+                        addEdge(edges, faces[j].c, faces[j].a);
+                    }
+                }
+
+                // Remove faces (in reverse order to keep indices valid)
+                removeIndices.sort((a,b)=>b-a).forEach(idx => faces.splice(idx, 1));
+
+                // Add new faces
+                edges.forEach(e => {
+                    const nf = { a: e.a, b: e.b, c: p };
+                    nf.normal = nf.b.sub(nf.a).cross(nf.c.sub(nf.a)).norm();
+                    nf.dist = nf.normal.dot(nf.a);
+                    // Check winding? Horizon logic usually preserves it if base was correct
+                    // Double check with origin
+                    if (nf.dist < 0) { 
+                        // Should not happen if geometry is convex and origin inside
+                        // But for robustness:
+                        const t = nf.b; nf.b = nf.c; nf.c = t;
+                        nf.normal = nf.normal.mul(-1); nf.dist *= -1;
+                    }
+                    faces.push(nf);
+                });
+
+                epaSteps.push({
+                    type: 'expand',
+                    faces: JSON.parse(JSON.stringify(faces)),
+                    newPoint: p,
+                    closestNormal: bestFace.normal,
+                    desc: `Iter ${i+1}: Expanding towards new point`
+                });
+            }
+        }
+
+        function addEdge(edges, a, b) {
+            // Check if reverse edge exists
+            for(let i=0; i<edges.length; i++) {
+                const e = edges[i];
+                // Simple equality check (using dist for float tolerance)
+                if (e.a.sub(b).magSq() < 1e-5 && e.b.sub(a).magSq() < 1e-5) {
+                    edges.splice(i, 1); // Remove both (internal edge)
+                    return;
+                }
+            }
+            edges.push({a:a, b:b});
+        }
+
+        // --- UI & Rendering Logic ---
+
+        function buildPolytopeMesh(faces) {
+            const geo = new THREE.BufferGeometry();
+            const verts = [];
+            faces.forEach(f => {
+                verts.push(f.a.x, f.a.y, f.a.z);
+                verts.push(f.b.x, f.b.y, f.b.z);
+                verts.push(f.c.x, f.c.y, f.c.z);
+            });
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        function updateViz() {
+            // Clear old viz
+            polytopeGroup.clear();
+            debugGroup.clear();
+
+            if (currentStep < 0 || currentStep >= epaSteps.length) return;
+
+            const step = epaSteps[currentStep];
+            
+            // 1. Draw Polytope
+            const geo = buildPolytopeMesh(step.faces);
+            const mat = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, transparent: true, opacity: 0.2, 
+                side: THREE.DoubleSide, depthTest: false 
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            polytopeGroup.add(mesh);
+            
+            const wireGeo = new THREE.WireframeGeometry(geo);
+            const wire = new THREE.LineSegments(wireGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
+            polytopeGroup.add(wire);
+
+            // 2. Draw Origin
+            const originGeo = new THREE.SphereGeometry(0.05);
+            const originMesh = new THREE.Mesh(originGeo, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+            debugGroup.add(originMesh);
+
+            // 3. Draw Specific Step Info
+            if (step.type === 'expand') {
+                // New Point
+                const ptGeo = new THREE.SphereGeometry(0.08);
+                const ptMesh = new THREE.Mesh(ptGeo, new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+                ptMesh.position.set(step.newPoint.x, step.newPoint.y, step.newPoint.z);
+                debugGroup.add(ptMesh);
+
+                // Expansion Arrow (Normal)
+                // Need a point on the face... average of face vertices is centroid?
+                // Just draw from origin in normal direction
+                const arrow = new THREE.ArrowHelper(
+                    new THREE.Vector3(step.closestNormal.x, step.closestNormal.y, step.closestNormal.z),
+                    new THREE.Vector3(0,0,0),
+                    3, 0xff00ff
+                );
+                debugGroup.add(arrow);
+            }
+
+            if (step.type === 'done') {
+                const arrow = new THREE.ArrowHelper(
+                    new THREE.Vector3(step.normal.x, step.normal.y, step.normal.z),
+                    new THREE.Vector3(0,0,0),
+                    step.depth, 0xff00ff, 0.2, 0.1
+                );
+                debugGroup.add(arrow);
+            }
+
+            // Update UI Text
+            document.getElementById('epa-depth').innerText = (step.depth || 0).toFixed(3);
+            
+            const list = document.getElementById('step-list');
+            Array.from(list.children).forEach((li, i) => {
+                li.className = i === currentStep ? 'active' : '';
+            });
+        }
+
+        function updateSimulation() {
+            // Update Mesh B Position
+            meshB.position.set(
+                parseFloat(document.getElementById('posX').value),
+                parseFloat(document.getElementById('posY').value),
+                parseFloat(document.getElementById('posZ').value)
+            );
+
+            // Check Collision
+            const hit = runGJK();
+            const status = document.getElementById('collision-status');
+            const epaCount = document.getElementById('epa-count');
+            
+            if (hit) {
+                status.innerText = "COLLISION";
+                status.style.color = "#f44336";
+                
+                runEPA();
+                epaCount.innerText = epaSteps.length;
+                
+                // Enable controls
+                document.getElementById('btn-prev').disabled = false;
+                document.getElementById('btn-next').disabled = false;
+                
+                // Refresh list
+                const list = document.getElementById('step-list');
+                list.innerHTML = '';
+                epaSteps.forEach((s, i) => {
+                    const li = document.createElement('li');
+                    li.innerText = `${i}: ${s.desc}`;
+                    li.onclick = () => {
+                        currentStep = i;
+                        updateViz();
+                    };
+                    list.appendChild(li);
+                });
+
+                if (currentStep === -1 || currentStep >= epaSteps.length) currentStep = 0;
+                updateViz();
+
+            } else {
+                status.innerText = "None";
+                status.style.color = "#4ec9b0";
+                epaCount.innerText = "0";
+                epaSteps = [];
+                currentStep = -1;
+                polytopeGroup.clear();
+                debugGroup.clear();
+                document.getElementById('step-list').innerHTML = '';
+                document.getElementById('btn-prev').disabled = true;
+                document.getElementById('btn-next').disabled = true;
+            }
+        }
+
+        // --- Event Listeners ---
+        ['posX', 'posY', 'posZ'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateSimulation);
+        });
+
+        document.getElementById('btn-prev').onclick = () => {
+            if (currentStep > 0) { currentStep--; updateViz(); }
+        };
+        
+        document.getElementById('btn-next').onclick = () => {
+            if (currentStep < epaSteps.length - 1) { currentStep++; updateViz(); }
+        };
+
+        document.getElementById('btn-auto').onclick = () => {
+            if (epaTimer) {
+                clearInterval(epaTimer);
+                epaTimer = null;
+                document.getElementById('btn-auto').innerText = "Auto Play";
+            } else {
+                if (epaSteps.length === 0) return;
+                epaTimer = setInterval(() => {
+                    if (currentStep < epaSteps.length - 1) {
+                        currentStep++;
+                        updateViz();
+                    } else {
+                        currentStep = 0;
+                        updateViz(); // Loop
+                    }
+                }, 500);
+                document.getElementById('btn-auto').innerText = "Stop";
+            }
+        };
+
+        // Render Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // Initial run
+        updateSimulation();
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

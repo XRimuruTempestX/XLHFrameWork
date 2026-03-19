@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EPA (Expanding Polytope Algorithm) Interactive Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        h1 { color: #569cd6; margin: 10px; font-size: 24px; }
+        .main-container {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            gap: 10px;
+        }
+        .canvas-wrapper {
+            flex: 1;
+            position: relative;
+            border: 1px solid #3e3e42;
+            background: #252526;
+            border-radius: 4px;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+        .controls {
+            width: 300px;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            padding: 15px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+        .status-panel {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #1177bb; }
+        button:disabled { background: #4a4a4a; cursor: not-allowed; }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .color-box { width: 12px; height: 12px; border-radius: 2px; }
+        
+        /* Step list style */
+        .step-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        .step-item {
+            padding: 5px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+        }
+        .step-item:hover { background: #333; }
+        .step-item.active { background: #264f78; }
+    </style>
+</head>
+<body>
+    <h1>EPA Algorithm Visualization (2D)</h1>
+    
+    <div class="main-container">
+        <div class="canvas-wrapper" id="canvasContainer">
+            <canvas id="mainCanvas"></canvas>
+            <div style="position: absolute; top: 10px; left: 10px; color: rgba(255,255,255,0.5);">
+                Drag shapes to move | Scroll to zoom | Right-drag to pan
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="status-panel">
+                <div id="collisionStatus">Checking collision...</div>
+                <div id="epaStatus" style="margin-top: 5px; color: #ce9178;">EPA: Inactive</div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><div class="color-box" style="background:#4fc1ff"></div>Shape A</div>
+                <div class="legend-item"><div class="color-box" style="background:#ce9178"></div>Shape B</div>
+                <div class="legend-item"><div class="color-box" style="background:#dcdcaa"></div>Minkowski Diff</div>
+                <div class="legend-item"><div class="color-box" style="background:rgba(255,255,255,0.2); border:1px solid #fff"></div>Polytope</div>
+            </div>
+
+            <div style="display:flex; gap:5px;">
+                <button id="btnStep" disabled>Next Step</button>
+                <button id="btnAuto" disabled>Auto Play</button>
+                <button id="btnReset">Reset EPA</button>
+            </div>
+
+            <div class="status-panel">
+                <strong>Current EPA Step:</strong>
+                <div id="stepDescription">Waiting for collision...</div>
+            </div>
+            
+            <ul class="step-list" id="stepList"></ul>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+
+        // Viewport transform
+        let offset = { x: canvas.width / 2, y: canvas.height / 2 };
+        let scale = 1.0;
+        let isDraggingView = false;
+        let lastMouse = { x: 0, y: 0 };
+
+        // Physics Shapes
+        const shapeA = {
+            type: 'poly',
+            vertices: [ {x:-40, y:-40}, {x:40, y:-40}, {x:40, y:40}, {x:-40, y:40} ], // Box
+            pos: { x: -30, y: 0 },
+            angle: 0,
+            color: '#4fc1ff'
+        };
+
+        const shapeB = {
+            type: 'poly',
+            vertices: [ {x:0, y:-50}, {x:43, y:25}, {x:-43, y:25} ], // Triangle
+            pos: { x: 30, y: 0 },
+            angle: 0,
+            color: '#ce9178'
+        };
+
+        // GJK & EPA State
+        let gjkSimplex = [];
+        let epaPolytope = []; // List of edges in 2D
+        let epaNormal = null;
+        let epaDepth = 0;
+        let isColliding = false;
+        let epaSteps = [];
+        let currentStepIndex = -1;
+        let autoPlayTimer = null;
+        let draggingShape = null;
+
+        // Math Helpers
+        function vecSub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
+        function vecAdd(a, b) { return { x: a.x + b.x, y: a.y + b.y }; }
+        function vecDot(a, b) { return a.x * b.x + a.y * b.y; }
+        function vecLenSq(a) { return a.x * a.x + a.y * a.y; }
+        function vecLen(a) { return Math.sqrt(vecLenSq(a)); }
+        function vecNorm(a) { 
+            const l = vecLen(a); 
+            return l > 0 ? { x: a.x/l, y: a.y/l } : {x:0,y:0}; 
+        }
+        function vecScale(a, s) { return { x: a.x * s, y: a.y * s }; }
+        function vecPerp(a) { return { x: -a.y, y: a.x }; } // 90 deg CCW
+        
+        // Transform vertex to world space
+        function transform(v, pos, angle) {
+            const c = Math.cos(angle);
+            const s = Math.sin(angle);
+            return {
+                x: v.x * c - v.y * s + pos.x,
+                y: v.x * s + v.y * c + pos.y
+            };
+        }
+
+        // Support function for shape
+        function getSupport(shape, dir) {
+            let maxDot = -Infinity;
+            let bestV = null;
+            for (let v of shape.vertices) {
+                const worldV = transform(v, shape.pos, shape.angle);
+                const dot = vecDot(worldV, dir);
+                if (dot > maxDot) {
+                    maxDot = dot;
+                    bestV = worldV;
+                }
+            }
+            return bestV;
+        }
+
+        // Minkowski Support (A - B)
+        function minkowskiSupport(dir) {
+            const sA = getSupport(shapeA, dir);
+            const sB = getSupport(shapeB, vecScale(dir, -1));
+            return vecSub(sA, sB);
+        }
+
+        // GJK Algorithm (Simplified 2D)
+        function runGJK() {
+            gjkSimplex = [];
+            let d = { x: 1, y: 0 }; // Initial direction
+            let a = minkowskiSupport(d);
+            gjkSimplex.push(a);
+            d = vecScale(a, -1); // Towards origin
+
+            for (let i = 0; i < 20; i++) {
+                a = minkowskiSupport(d);
+                if (vecDot(a, d) < 0) return false; // No collision
+                gjkSimplex.push(a);
+                if (handleSimplex(d)) return true; // Collision found
+            }
+            return false;
+        }
+
+        function handleSimplex(dir) {
+            // 2D GJK Simplex Logic
+            const a = gjkSimplex[gjkSimplex.length - 1];
+            const ao = vecScale(a, -1);
+            
+            if (gjkSimplex.length === 3) {
+                const b = gjkSimplex[1];
+                const c = gjkSimplex[0];
+                const ab = vecSub(b, a);
+                const ac = vecSub(c, a);
+                const abPerp = tripleProd(ac, ab, ab);
+                const acPerp = tripleProd(ab, ac, ac);
+
+                if (vecDot(abPerp, ao) > 0) {
+                    gjkSimplex.splice(0, 1); // Remove c
+                    dir.x = abPerp.x; dir.y = abPerp.y;
+                } else if (vecDot(acPerp, ao) > 0) {
+                    gjkSimplex.splice(1, 1); // Remove b
+                    dir.x = acPerp.x; dir.y = acPerp.y;
+                } else {
+                    return true; // Origin inside triangle
+                }
+            } else {
+                // Line segment case
+                const b = gjkSimplex[0];
+                const ab = vecSub(b, a);
+                const abPerp = tripleProd(ab, ao, ab);
+                dir.x = abPerp.x; dir.y = abPerp.y;
+            }
+            return false;
+        }
+
+        // Triple product (AxB)xA for 2D vectors (using Z as intermediate)
+        function tripleProd(a, b, c) {
+            // (AxB) is vector in Z. (AxB)xC is vector in XY plane perpendicular to C
+            // Here we want vector perpendicular to B, in direction of A
+            // Simplified 2D perp logic:
+            // return perpendicular to c pointing towards a?
+            // Standard: (A x B) x A
+            // 2D: normal of B towards A
+            // Let's stick to simple normal calculation
+            // Normal of line ab pointing towards origin
+            return vecSub(b, vecScale(a, vecDot(b, a)/vecDot(a,a))); // Gram-Schmidt-ish? No.
+            
+            // Proper 2D perp:
+            // n = (-y, x)
+            // if dot(n, ao) < 0, n = -n
+            // Here:
+            let n = { x: -b.y, y: b.x };
+            if (vecDot(n, a) < 0) n = vecScale(n, -1); // Towards A (if A is AO)
+            return n;
+        }
+
+        // EPA Algorithm Recording
+        function runEPA() {
+            if (!isColliding) return;
+            epaSteps = [];
+            
+            // 1. Initialize Polytope (Simplex from GJK)
+            // Ensure CCW winding
+            let polytope = [...gjkSimplex];
+            // Check winding
+            const e1 = vecSub(polytope[1], polytope[0]);
+            const e2 = vecSub(polytope[2], polytope[1]);
+            if (e1.x * e2.y - e1.y * e2.x < 0) polytope.reverse();
+            
+            epaSteps.push({
+                type: 'init',
+                polytope: JSON.parse(JSON.stringify(polytope)),
+                desc: 'Initial Polytope from GJK Simplex'
+            });
+
+            for (let k = 0; k < 20; k++) {
+                // Find closest edge to origin
+                let minDist = Infinity;
+                let closestEdgeIndex = -1;
+                let closestNormal = {x:0, y:0};
+
+                for (let i = 0; i < polytope.length; i++) {
+                    const j = (i + 1) % polytope.length;
+                    const a = polytope[i];
+                    const b = polytope[j];
+                    const ab = vecSub(b, a);
+                    
+                    // Normal pointing OUT (assuming CCW winding, normal is Right of edge)
+                    // Wait, standard 2D CCW polygon, Normal is (dy, -dx)? No, that's Right.
+                    // Let's test: Edge (1,0) -> (0,1). Normal should be (1,1).
+                    // ab = (-1, 1). Right normal = (1, 1). Correct.
+                    let n = vecNorm({ x: ab.y, y: -ab.x }); 
+                    
+                    const dist = vecDot(n, a); // dist from origin
+                    
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestEdgeIndex = i;
+                        closestNormal = n;
+                    }
+                }
+
+                // Search new point
+                const p = minkowskiSupport(closestNormal);
+                const d = vecDot(p, closestNormal);
+
+                if (d - minDist < 0.001) {
+                    epaSteps.push({
+                        type: 'done',
+                        polytope: JSON.parse(JSON.stringify(polytope)),
+                        normal: closestNormal,
+                        depth: d,
+                        desc: `Converged! Depth: ${d.toFixed(2)}`
+                    });
+                    break;
+                }
+
+                epaSteps.push({
+                    type: 'expand',
+                    polytope: JSON.parse(JSON.stringify(polytope)),
+                    closestEdge: closestEdgeIndex,
+                    normal: closestNormal,
+                    newPoint: p,
+                    desc: `Iteration ${k+1}: Found new point at dist ${d.toFixed(2)}`
+                });
+
+                // Insert p into polytope
+                polytope.splice(closestEdgeIndex + 1, 0, p);
+            }
+        }
+
+        // --- Rendering ---
+
+        function drawPolygon(verts, color, fill=false, width=2) {
+            if (verts.length === 0) return;
+            ctx.beginPath();
+            ctx.moveTo(verts[0].x, verts[0].y);
+            for (let i = 1; i < verts.length; i++) ctx.lineTo(verts[i].x, verts[i].y);
+            ctx.closePath();
+            ctx.lineWidth = width;
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            if (fill) {
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.2;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function drawPoint(p, color, size=4) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, size, 0, Math.PI*2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function drawArrow(from, to, color) {
+            const head = 10;
+            const angle = Math.atan2(to.y - from.y, to.x - from.x);
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(to.x, to.y);
+            ctx.lineTo(to.x - head * Math.cos(angle - Math.PI/6), to.y - head * Math.sin(angle - Math.PI/6));
+            ctx.moveTo(to.x, to.y);
+            ctx.lineTo(to.x - head * Math.cos(angle + Math.PI/6), to.y - head * Math.sin(angle + Math.PI/6));
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawGrid() {
+            const size = 50;
+            const w = canvas.width / scale;
+            const h = canvas.height / scale;
+            const left = -offset.x / scale;
+            const top = -offset.y / scale;
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1 / scale;
+            ctx.beginPath();
+            for (let x = Math.floor(left/size)*size; x < left+w; x+=size) {
+                ctx.moveTo(x, top); ctx.lineTo(x, top+h);
+            }
+            for (let y = Math.floor(top/size)*size; y < top+h; y+=size) {
+                ctx.moveTo(left, y); ctx.lineTo(left+w, y);
+            }
+            ctx.stroke();
+
+            // Axes
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2 / scale;
+            ctx.beginPath();
+            ctx.moveTo(left, 0); ctx.lineTo(left+w, 0);
+            ctx.moveTo(0, top); ctx.lineTo(0, top+h);
+            ctx.stroke();
+        }
+
+        function render() {
+            // Resize canvas
+            if (canvas.width !== container.clientWidth || canvas.height !== container.clientHeight) {
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                offset = { x: canvas.width / 2, y: canvas.height / 2 };
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.translate(offset.x, offset.y);
+            ctx.scale(scale, -scale); // Flip Y for standard Cartesian
+
+            drawGrid();
+
+            // Draw Shapes
+            const worldA = shapeA.vertices.map(v => transform(v, shapeA.pos, shapeA.angle));
+            const worldB = shapeB.vertices.map(v => transform(v, shapeB.pos, shapeB.angle));
+            drawPolygon(worldA, shapeA.color, true);
+            drawPolygon(worldB, shapeB.color, true);
+
+            // Draw Minkowski Difference (Visualization only)
+            // We sample points to draw the outline roughly
+            // Actually, we can just draw the Polytope from EPA if available
+            
+            if (isColliding && epaSteps.length > 0) {
+                const step = currentStepIndex >= 0 ? epaSteps[currentStepIndex] : epaSteps[0];
+                if (step) {
+                    // Draw Polytope
+                    drawPolygon(step.polytope, '#dcdcaa', true, 2 / scale);
+                    step.polytope.forEach(p => drawPoint(p, '#fff', 3/scale));
+
+                    // Draw Origin
+                    drawPoint({x:0,y:0}, '#ff0000', 5/scale);
+
+                    if (step.type === 'expand') {
+                        // Draw Normal
+                        const edgeStart = step.polytope[step.closestEdge];
+                        const edgeEnd = step.polytope[(step.closestEdge + 1) % step.polytope.length];
+                        const mid = vecScale(vecAdd(edgeStart, edgeEnd), 0.5);
+                        const normEnd = vecAdd(mid, vecScale(step.normal, 30));
+                        drawArrow(mid, normEnd, '#ff0');
+                        
+                        // Draw New Point
+                        drawPoint(step.newPoint, '#0f0', 5/scale);
+                        
+                        // Draw projection line
+                        ctx.setLineDash([5/scale, 5/scale]);
+                        ctx.strokeStyle = '#666';
+                        ctx.beginPath();
+                        ctx.moveTo(0,0);
+                        ctx.lineTo(step.newPoint.x, step.newPoint.y);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                    
+                    if (step.type === 'done') {
+                        const normEnd = vecScale(step.normal, step.depth);
+                        drawArrow({x:0,y:0}, normEnd, '#f0f');
+                        // Draw penetration vector on shape
+                        // ... visualize separation
+                    }
+                }
+            } else if (isColliding) {
+                // Just GJK Simplex
+                drawPolygon(gjkSimplex, '#dcdcaa', false);
+            }
+
+            ctx.restore();
+        }
+
+        // --- Interaction ---
+
+        function updatePhysics() {
+            isColliding = runGJK();
+            const statusDiv = document.getElementById('collisionStatus');
+            const epaDiv = document.getElementById('epaStatus');
+            const btnStep = document.getElementById('btnStep');
+            const btnAuto = document.getElementById('btnAuto');
+
+            if (isColliding) {
+                statusDiv.innerText = "COLLISION DETECTED";
+                statusDiv.style.color = "#f44336";
+                runEPA();
+                epaDiv.innerText = `EPA Steps: ${epaSteps.length}`;
+                btnStep.disabled = false;
+                btnAuto.disabled = false;
+                
+                // Update Step List UI
+                updateStepListUI();
+                
+                if (currentStepIndex === -1) currentStepIndex = 0; // Start at 0
+            } else {
+                statusDiv.innerText = "No Collision";
+                statusDiv.style.color = "#4ec9b0";
+                epaDiv.innerText = "EPA: Inactive";
+                btnStep.disabled = true;
+                btnAuto.disabled = true;
+                epaSteps = [];
+                currentStepIndex = -1;
+                document.getElementById('stepList').innerHTML = '';
+                document.getElementById('stepDescription').innerText = 'No collision';
+            }
+        }
+
+        function updateStepListUI() {
+            const list = document.getElementById('stepList');
+            list.innerHTML = '';
+            epaSteps.forEach((step, i) => {
+                const li = document.createElement('li');
+                li.className = `step-item ${i === currentStepIndex ? 'active' : ''}`;
+                li.innerText = `${i+1}. ${step.type.toUpperCase()}`;
+                li.onclick = () => {
+                    currentStepIndex = i;
+                    updateStepListUI();
+                    document.getElementById('stepDescription').innerText = step.desc;
+                    render();
+                };
+                list.appendChild(li);
+            });
+            
+            if (currentStepIndex >= 0 && currentStepIndex < epaSteps.length) {
+                document.getElementById('stepDescription').innerText = epaSteps[currentStepIndex].desc;
+            }
+        }
+
+        canvas.addEventListener('mousedown', e => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            if (e.button === 2) {
+                isDraggingView = true;
+                lastMouse = { x: mouseX, y: mouseY };
+                return;
+            }
+
+            // Check shape click
+            // Simple AABB check for demo
+            const worldMouse = {
+                x: (mouseX - offset.x) / scale,
+                y: -(mouseY - offset.y) / scale
+            };
+            
+            if (Math.abs(worldMouse.x - shapeA.pos.x) < 40 && Math.abs(worldMouse.y - shapeA.pos.y) < 40) draggingShape = shapeA;
+            else if (Math.abs(worldMouse.x - shapeB.pos.x) < 40 && Math.abs(worldMouse.y - shapeB.pos.y) < 40) draggingShape = shapeB;
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (isDraggingView) {
+                offset.x += mouseX - lastMouse.x;
+                offset.y += mouseY - lastMouse.y;
+                lastMouse = { x: mouseX, y: mouseY };
+                render();
+            } else if (draggingShape) {
+                const worldMouse = {
+                    x: (mouseX - offset.x) / scale,
+                    y: -(mouseY - offset.y) / scale
+                };
+                draggingShape.pos = worldMouse;
+                updatePhysics();
+                render();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDraggingView = false;
+            draggingShape = null;
+        });
+        
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomSpeed = 0.1;
+            scale *= e.deltaY < 0 ? (1 + zoomSpeed) : (1 - zoomSpeed);
+            render();
+        });
+
+        document.getElementById('btnStep').onclick = () => {
+            if (currentStepIndex < epaSteps.length - 1) {
+                currentStepIndex++;
+                updateStepListUI();
+                render();
+            }
+        };
+
+        document.getElementById('btnAuto').onclick = () => {
+            if (autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+                document.getElementById('btnAuto').innerText = "Auto Play";
+            } else {
+                autoPlayTimer = setInterval(() => {
+                    if (currentStepIndex < epaSteps.length - 1) {
+                        currentStepIndex++;
+                        updateStepListUI();
+                        render();
+                    } else {
+                        clearInterval(autoPlayTimer);
+                        autoPlayTimer = null;
+                        document.getElementById('btnAuto').innerText = "Auto Play";
+                    }
+                }, 500);
+                document.getElementById('btnAuto').innerText = "Stop";
+            }
+        };
+
+        document.getElementById('btnReset').onclick = () => {
+            currentStepIndex = 0;
+            updateStepListUI();
+            render();
+        };
+
+        // Init
+        updatePhysics();
+        render();
+
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -503,6 +503,28 @@ namespace XAsset.Runtime.BundleLoad
         {
             if (assetItem != null)
             {
+                // 在 Editor 模式下，直接卸载非 GameObject 的资源
+#if UNITY_EDITOR
+                if (BundleSettings.Instance.loadAssetType == LoadAssetEnum.Editor)
+                {
+                    assetItem.refCount--;
+                    if (assetItem.refCount <= 0)
+                    {
+                        if (assetItem.obj != null && !(assetItem.obj is GameObject) && !(assetItem.obj is Component))
+                        {
+                            Resources.UnloadAsset(assetItem.obj);
+                        }
+                        assetItem.obj = null;
+                        if (assetItem.objArr != null)
+                            assetItem.objArr = null;
+                            
+                        // 注意这里不需要去操作 mAllAlreadyLoadBundleDic，因为 Editor 模式下没进这个字典
+                        Log("Editor ReleaseAssets done for path=" + assetItem.path);
+                    }
+                    return;
+                }
+#endif
+
                 if (assetItem.obj != null)
                     assetItem.obj = null;
                 if (assetItem.objArr != null)

@@ -392,6 +392,7 @@ namespace XAsset.Runtime.BundleLoad
             if (item?.obj != null)
             {
                 Log("BundleItem already has obj, returning cached for path=" + path);
+                item.refCount++; // 取缓存时也要增加引用计数
                 return (T)item.obj;
             }
 
@@ -406,8 +407,21 @@ namespace XAsset.Runtime.BundleLoad
                     return null;
                 }
 
-            //    item.obj = obj;
-                Log("Editor mode load success path=" + path);
+                // 如果字典中没有这个 item，则创建一个模拟的 BundleItem
+                if (item == null)
+                {
+                    item = new BundleItem();
+                    item.crc = crc;
+                    item.path = path;
+                    // 注意：item.assetBundle 保持为 null 即可
+                    
+                    mAlreadyLoadAssetsDic.TryAdd(crc, item); // 存入缓存字典
+                }
+
+                item.obj = obj;
+                item.refCount++; // 核心：引用计数++
+
+                Log("Editor mode load success path=" + path + " refCount=" + item.refCount);
                 return obj;
             }
 #endif
@@ -423,6 +437,7 @@ namespace XAsset.Runtime.BundleLoad
             sw.Start();
             T loadObj = await item.assetBundle.LoadAssetAsync<T>(item.path) as T;
             item.obj = loadObj;
+            item.refCount++;
             mAlreadyLoadAssetsDic.TryAdd(crc, item); //记录已经加载过这个资源进缓存
             sw.Stop();
             Log("AssetBundle LoadAssetAsync done assetPath=" + item.path + ", elapsed=" + sw.ElapsedMilliseconds +

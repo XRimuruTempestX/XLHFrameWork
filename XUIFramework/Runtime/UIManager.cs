@@ -337,11 +337,13 @@ namespace XUIFramework
         /// <summary>
         /// 关闭所有窗口
         /// </summary>
-        public async UniTask CloseAll()
+        public async UniTask CloseAll(params string[] args)
         {
             // 倒序关闭
             for (int i = _activeWindows.Count - 1; i >= 0; i--)
             {
+                if(string.Equals(args[i], _activeWindows[i].Name))
+                    continue;
                 await CloseWindow(_activeWindows[i]);
             }
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -77,6 +77,17 @@ namespace XAsset.Runtime
             }
             
             return Instance.mDecompressAssets.StartDeCompressBuiltinFile(bundleModule, callBack);
+        }
+
+        /// <summary>
+        /// 预热对象池资源
+        /// </summary>
+        /// <param name="path">资源路径</param>
+        /// <param name="count">预热数量</param>
+        /// <returns></returns>
+        public async UniTask PreLoadObjAsync(string path, int count = 1)
+        {
+            await mResourceMgr.PreLoadObjAsync(path, count);
         }
 
         /// <summary>

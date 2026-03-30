@@ -194,7 +194,7 @@ namespace XAsset.Runtime.BundleLoad
             try
             {
                 pool = await CreatePoolAsync(crc, path, count);
-                mObjectPoolDic.Add(crc, pool);
+                mObjectPoolDic.TryAdd(crc, pool);
 
                 tcs.TrySetResult(pool);
 
